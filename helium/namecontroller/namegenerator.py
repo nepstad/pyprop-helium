@@ -3,23 +3,93 @@ NameGenerator
 =============
 
 From a config object, construct lists of file names of a given kind.
+
+Provides:
+            GetBoundstateFilenames(conf, L)
+			GetAllBoundstateFilenames(conf)
+			GetSingleParticleStatesFilename(conf, model)
 """
+__all__ = ["GetBoundstateFilenames", "GetAllBoundstateFilenames",
+		"GetSingleParticleStatesFilename"]
 
-__all__ = ["GetBoundstateFilenames", "GetSingleParticleStatesFilename"]
-
-from helium.siteconfig import SingleParticleLocations
-from prefixgenerator import *
+from helium.siteconfig import SingleParticleLocations, BoundstateLocation
+from postfixgenerator import *
+from pyprop import Config
 import os
+from numpy import unique
+import pyprop
 
 
-def GetBoundstateFilenames(conf):
-	pass
+def GetBoundstatesFilename(conf, L):
+	"""
+	Generate the name of a file where bound states associated with a given
+	config is located. Note that L must be specified for the filename to be
+	uniquely determined.
+
+	Input
+	-----
+	conf: a pyprop config object
+	L: integer specifying total angular momentum
+
+	Returns: A single file name (string)
+	"""
+
+	localConf = pyprop.Config(conf.cfgObj)
+	localConf.AngularRepresentation.index_iterator.L = [L]
+
+	#Get custom postfix for filename, if specified
+	customPostfix = ""
+	#if hasattr(conf, "Special"):
+	#	customPostfix = "_%s" % getattr(conf.Special, "custom_postfix", "")
+
+	#Generate radial and angular postfixes from config
+	radialPostfix = "_".join(GetRadialPostfix(localConf))
+	angularPostfix = "_".join(GetAngularPostfix(localConf))
+
+	#Generate bound states filename
+	boundstatesFilename = "%s/boundstates_%s_%s%s.h5" % (BoundstateLocation, radialPostfix, angularPostfix, customPostfix)
+	
+	return boundstatesFilename
+
+
+def GetAllBoundstateFilenames(conf):
+	"""
+	Get list of bound states files for all L's.
+
+	Input
+	-----
+	conf: a pyprop config object
+
+	Returns: a list of file names (strings)
+	"""
+	
+	#Get unique list of Ls
+	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator])
+
+	#Construct file list
+	fileList = [GetBoundstatesFilename(conf, L=int(L)) for L in Llist]
+
+	#Filter out non-existing files
+	filteredFileList = filter(os.path.exists, fileList)
+
+	#Check that we found some files
+	if len(filteredFileList) == 0:
+		raise Exception("Could not find any bound states files!")
+
+	return filteredFileList
 
 
 def GetSingleParticleStatesFilename(conf, model):
 	"""
-	Construct absolute path for file containing single 
-	particle states	matching given arguments.
+	Construct absolute path for file containing single particle states
+	matching given arguments.
+
+	Input
+	-----
+	conf: a pyprop config object
+	model: a string indicating the atomic model (e.g. 'h', 'he+', etc)
+
+	Returns: file name (string)
 	"""
 	#Get radial prefix
 	radialPostfix = "_".join(GetRadialPostfix(conf))

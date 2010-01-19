@@ -16,7 +16,7 @@ from helium.siteconfig import SingleParticleLocations, BoundstateLocation
 from postfixgenerator import *
 from pyprop import Config
 import os
-from numpy import unique
+from numpy import unique, int32
 import pyprop
 
 
@@ -64,10 +64,10 @@ def GetAllBoundstateFilenames(conf):
 	"""
 	
 	#Get unique list of Ls
-	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator])
+	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator], dtype=int32)
 
 	#Construct file list
-	fileList = [GetBoundstatesFilename(conf, L=int(L)) for L in Llist]
+	fileList = [GetBoundstatesFilename(conf, L=L) for L in Llist]
 
 	#Filter out non-existing files
 	filteredFileList = filter(os.path.exists, fileList)

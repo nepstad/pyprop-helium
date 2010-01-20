@@ -1,3 +1,14 @@
+"""
+Preconditioner
+==============
+
+Set up preconditioner for Helium/two-electron problems.
+
+RadialTwoElectronPreconditionerSuperLU
+RadialTwoElectronPreconditionerIfpack
+"""
+
+__all__ = ["RadialTwoElectronPreconditionerSuperLU", "RadialTwoElectronPreconditionerSuperLU"]
 
 def GetRadialMatricesCompressedCol(pot, psi):
 	"""

@@ -1,0 +1,16 @@
+helium/                         
+	__init__.py
+	siteconfig-example.py
+	siteconfig.py
+	utils.py
+
+	analysis/                    Stuff related to analysis of wavefunction
+		__init__.py
+
+	core/                        Potentials and other core functionality
+
+	eigenvalues/                 Finding eigenpairs
+	
+	namecontroller/              Generate names for data files
+
+

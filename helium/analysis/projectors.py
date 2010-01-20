@@ -4,7 +4,7 @@ Projectors
 
 """
 
-__all__ = ["GetPopulationProductStates",]
+__all__ = ["GetPopulationProductStates", "GetPopulationEigenstates"]
 
 from numpy import array, int32
 from indextricks import *
@@ -17,12 +17,8 @@ def GetPopulationProductStates(psi, singleStates1, singleStates2):
 
 	P_i =  |< SingleState1_i(1), SingleState2_j(2) | psi(1,2) >|^2
 
-	singleStates 1 and 2 are lists of angular momentum states, containing an array 
-	of radial states for the given angular momentum number such as generated
-	by SetupRadialEigenstates in the Helium SAE example
-	
-	the projection is carried out for every combination of singlestate1 and singlestate2i
-	is returned in a similar structure
+	The projection is carried out for every combination of singlestate1 and singlestate2i
+	is returned in a similar structure.
 
 	Input
 	-----
@@ -64,4 +60,11 @@ def GetPopulationProductStates(psi, singleStates1, singleStates2):
 			population.append((l1, l2, projV))
 
 	return population
+
+
+def GetPopulationEigenstates(psi, eigenstates):
+	"""
+	Project psi on all eigenstates and return populations
+	"""
+	raise NotImplementedError("Not implemented yet!")
 

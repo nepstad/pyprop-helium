@@ -4,7 +4,7 @@ IndexTricks
 """
 
 from numpy import r_,  array
-from helium.utils import *
+from ..utils import *
 
 def GetLocalCoupledSphericalHarmonicIndices(psi, coupledIndexFilter):
 	"""

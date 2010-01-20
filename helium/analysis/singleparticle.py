@@ -8,24 +8,26 @@ Basic single particle states operations are provided. These are:
 	2)Load single particle data
 	3)?
 
-Provides:
+
+SingleParticleStates
 
 """
 from __future__ import with_statement
 
 __all__ = ["SingleParticleStates"]
 
-import helium.namecontroller.namegenerator as NameGen
+from ..namecontroller import namegenerator as NameGen
 import tables
 import pyprop
 from numpy import array, zeros, arctan2, exp, transpose, double, complex, imag, real
+
 
 class States:
 	pass
 
 class SingleParticleStates(States):
 	"""
-	Purpose: provide single particle states data
+	Provide single particle states data
 
 	get names, load data, nice interface
 	"""
@@ -47,7 +49,7 @@ class SingleParticleStates(States):
 		self.__Load()
 
 
-	def GetEnergyFilteredRadialStates(self, l):
+	def GetRadialStates(self, l):
 		"""
 		Return all radial states corresponding to angular momentum 'l'
 		and matching energy conditions in self.StateFilter.
@@ -72,7 +74,7 @@ class SingleParticleStates(States):
 		"""
 		"""
 		for l in self.__States.iterkeys():
-			E,V = self.GetEnergyFilteredRadialStates(l)
+			E,V = self.GetRadialStates(l)
 			yield int(l), V
 
 

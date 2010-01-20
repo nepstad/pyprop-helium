@@ -1,0 +1,3 @@
+#SuperLU Solver
+Solver = Template("SuperLUSolver", "superlu.cpp")
+Solver("2")

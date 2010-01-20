@@ -1,0 +1,9 @@
+#Laser Potentials (Velocity Gauge)
+CustomPotential = Template("CustomPotential_LaserVelocityDerivativeR1", "coupledvelocity.cpp")
+CustomPotential("3")
+
+CustomPotential = Template("CustomPotential_LaserVelocityDerivativeR2", "coupledvelocity.cpp")
+CustomPotential("3")
+
+CustomPotential = Template("CustomPotential_LaserVelocity", "coupledvelocity.cpp")
+CustomPotential("3")

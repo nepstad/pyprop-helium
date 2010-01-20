@@ -5,12 +5,12 @@ include $(PYPROP_ROOT)/Makefile.platform
 PYPROP_LIB_PATH := $(PYPROP_ROOT)/pyprop/core
 INCLUDE      := $(INCLUDE) -I$(PYPROP_ROOT)/
 
-PYSTEFILES   := wrapper.pyste
-SOURCEFILES  := wrapper.cpp
-OBJECTS      := $(SOURCEFILES:.cpp=.o)
+PYSTEFILES   := $(wildcard *.pyste)
 MODULENAME   := libheliumcore
+PYSTEOBJECTS := $(PYSTEFILES:.pyste=.cpp)
+OBJECTS      := $(PYSTEOBJECTS:.cpp=.o) $(MODULENAME).o
 
--include $(PYPROP_ROOT)/core/makefiles/Makefile.extension
+-include Makefile.extension
 
 SUPERLU_PATH = $(PYPROP_ROOT)/extern/superlu_serial
 SUPERLU_LIBS = -L$(SUPERLU_PATH)/lib -lsuperlu_serial

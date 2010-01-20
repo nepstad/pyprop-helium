@@ -1,3 +1,3 @@
 import libheliumcore
 
-__all__ = ["libheliumcore", "preconditioner"]
+__all__ = ["libheliumcore", "preconditioner", "laserfunctions"]

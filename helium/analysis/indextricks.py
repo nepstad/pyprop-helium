@@ -4,8 +4,10 @@ IndexTricks
 """
 
 from numpy import r_,  array
-from ..utils import *
+from ..utils import GetAngularRankIndex, RegisterAll
+import sys
 
+@RegisterAll
 def GetLocalCoupledSphericalHarmonicIndices(psi, coupledIndexFilter):
 	"""
 	Returns the processor local indices which corresponds to a filter on

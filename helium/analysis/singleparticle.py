@@ -13,8 +13,7 @@ SingleParticleStates
 
 """
 from __future__ import with_statement
-
-__all__ = ["SingleParticleStates"]
+from ..utils import RegisterAll
 
 from ..namecontroller import namegenerator as NameGen
 import tables
@@ -25,6 +24,7 @@ from numpy import array, zeros, arctan2, exp, transpose, double, complex, imag, 
 class States:
 	pass
 
+@RegisterAll
 class SingleParticleStates(States):
 	"""
 	Provide single particle states data

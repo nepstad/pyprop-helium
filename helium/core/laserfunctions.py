@@ -1,11 +1,15 @@
 """
 LaserFunctions
 ==============
+
+Supply time dependence for time-dependent potentials, such as laser fields.
 """
 
-__all__ = ["LaserFunctionVelocity", "LaserFunctionFlatTop",
-		"LaserFunctionSimpleLength", "LaserFunctionLength"]
+from ..utils import RegisterAll, RegisterProjectNamespace
 
+
+@RegisterProjectNamespace
+@RegisterAll
 def LaserFunctionVelocity(conf, t):
 	phase = 0.0
 	if hasattr(conf, "phase"):
@@ -18,6 +22,9 @@ def LaserFunctionVelocity(conf, t):
 		curField = 0
 	return curField
 
+
+@RegisterProjectNamespace
+@RegisterAll
 def LaserFunctionFlatTop(conf, t):
 	pulseStart = 0
 	if conf.Exists("pulse_start"):
@@ -35,6 +42,9 @@ def LaserFunctionFlatTop(conf, t):
 
 	return curField
 
+
+@RegisterProjectNamespace
+@RegisterAll
 def LaserFunctionSimpleLength(conf, t):
 	if 0 <= t < conf.pulse_duration:
 		curField = conf.amplitude;
@@ -45,6 +55,8 @@ def LaserFunctionSimpleLength(conf, t):
 	return curField
 
 
+@RegisterProjectNamespace
+@RegisterAll
 def LaserFunctionLength(conf, t):
 	if 0 <= t < conf.pulse_duration:
 		curField = conf.amplitude;

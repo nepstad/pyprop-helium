@@ -1,3 +1,5 @@
+import os
+
 #Path to single-particle data
 SingleParticleLocations = [""]
 
@@ -5,4 +7,4 @@ SingleParticleLocations = [""]
 BoundstateLocations = ""
 
 #Path to Pyprop module
-PypropLocation = "../pyprop"
+PypropLocation = os.abspath("../pyprop")

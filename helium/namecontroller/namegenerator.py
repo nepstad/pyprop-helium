@@ -13,13 +13,15 @@ __all__ = ["GetBoundstateFilenames", "GetAllBoundstateFilenames",
 		"GetSingleParticleStatesFilename"]
 
 from helium.siteconfig import SingleParticleLocations, BoundstateLocation
-from postfixgenerator import *
+from postfixgenerator import GetRadialPostfix, GetAngularPostfix
+from ..utils import RegisterAll, RegisterProjectNamespace
+
 from pyprop import Config
-import os
 from numpy import unique, int32
-import pyprop
+import os
 
 
+@RegisterAll
 def GetBoundstatesFilename(conf, L):
 	"""
 	Generate the name of a file where bound states associated with a given
@@ -34,7 +36,7 @@ def GetBoundstatesFilename(conf, L):
 	Returns: A single file name (string)
 	"""
 
-	localConf = pyprop.Config(conf.cfgObj)
+	localConf = Config(conf.cfgObj)
 	localConf.AngularRepresentation.index_iterator.L = [L]
 
 	#Get custom postfix for filename, if specified
@@ -52,6 +54,7 @@ def GetBoundstatesFilename(conf, L):
 	return boundstatesFilename
 
 
+@RegisterAll
 def GetAllBoundstateFilenames(conf):
 	"""
 	Get list of bound states files for all L's.
@@ -79,6 +82,7 @@ def GetAllBoundstateFilenames(conf):
 	return filteredFileList
 
 
+@RegisterAll
 def GetSingleParticleStatesFilename(conf, model):
 	"""
 	Construct absolute path for file containing single particle states

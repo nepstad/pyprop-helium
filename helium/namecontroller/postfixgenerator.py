@@ -12,10 +12,10 @@ Provides:
 	GetAngularPostifx(conf)
 """
 
-__all__ = ["GetProjectPostfix", "GetRadialPostfix", "GetAngularPostfix"]
-
+from ..utils import RegisterAll, RegisterProjectNamespace
 from numpy import unique
 
+@RegisterAll
 def GetProjectPostfix(conf):
 	"""
 	Get project prefix from config file
@@ -23,6 +23,7 @@ def GetProjectPostfix(conf):
 	return conf.Description.project
 
 
+@RegisterAll
 def GetRadialPostfix(conf):
 	"""
 	Returns a "unique" list of strings string identifying the radial grid
@@ -43,6 +44,7 @@ def GetRadialPostfix(conf):
 	return postfix
 
 
+@RegisterAll
 def GetAngularPostfix(conf):
 	"""
 	Returns a "unique" list of strings string identifying the angular grid
@@ -71,7 +73,4 @@ def GetAngularPostfix(conf):
 	postfix += ["M%s" % getSortedListString(Mlist)]	
 
 	return postfix
-
-
-
 

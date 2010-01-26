@@ -23,7 +23,8 @@ import os
 
 @RegisterAll
 def GetBoundstatesFilename(conf, L):
-	"""
+	"""Return filename of some angular momentum bound states.
+
 	Generate the name of a file where bound states associated with a given
 	config is located. Note that L must be specified for the filename to be
 	uniquely determined.

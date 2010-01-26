@@ -1,70 +1,237 @@
 """
-Projectors
+projectors
 ==========
 
+Calculates projection of wavefunction onto various set of states.
+
 """
-
-__all__ = ["GetPopulationProductStates", "GetPopulationEigenstates"]
-
+import sys
 from numpy import array, int32
-from indextricks import *
+from indextricks import GetLocalCoupledSphericalHarmonicIndices
+from ..utils import RegisterAll
+from ..configtools import Getlmax
+from singleparticle import SingleParticleStates
 from libheliumanalysis import CalculatePopulationRadialProductStates
+from libheliumanalysis import CalculateProjectionRadialProductStates
 
 
-def GetPopulationProductStates(psi, singleStates1, singleStates2):
+class Projector(object):
 	"""
-	Calculates the population of psi in a set of single electron product states
+	Implements the action of a projection operator P: Pw -> w' and (1-P)w -> w'.
+	
+	In practise, this means that an input wavefunction is projected
+	onto some subspace, and the result returned.
+	"""
+	
+	def __init__(self):
+		pass
 
-	P_i =  |< SingleState1_i(1), SingleState2_j(2) | psi(1,2) >|^2
+	def ProjectOnto(self, psi):
+		pass
 
-	The projection is carried out for every combination of singlestate1 and singlestate2i
-	is returned in a similar structure.
+	def ProjectOntoComplement(self, psi):
+		pass
 
-	Input
-	-----
-	psi: a wavefunction
-	singleStates1: SingleParticleStates instance
-	singleStates2: another SingleParticleStates instance
 
-	Returns: projections onto all combinations of states, 
+@RegisterAll
+class SymmetryProjector(Projector):
+	pass
+
+
+@RegisterAll
+class EigenstateProjector(Projector):
+	"""
 	"""
 
-	#Make a copy of the wavefunction and multiply 
-	#integration weights and overlap matrix
-	tempPsi = psi.Copy()
-	repr = psi.GetRepresentation()
-	repr.MultiplyIntegrationWeights(tempPsi)
-	distr = psi.GetRepresentation().GetDistributedModel()
+	def __init__(self, conf):
+		self.Config = conf
+		#self.BoundStates = Boundstates(conf)
 
-	data = tempPsi.GetData()
-	population = []
 
-	for l1, V1 in singleStates1.IterateRadialStates():
-		#print "%i/%i" % (l1, len(singleStates1))
-		if V1.size == 0:
-			continue
+	def ProjectOnto(self, psi):
+		pass
 
-		for l2, V2 in singleStates2.IterateRadialStates():
-			if V2.size == 0:
+	def ProjectOntoComplement(self, psi):
+		pass
+
+	
+	def RemoveProjection(self, psi):
+		pass
+#		projectionList = []
+#
+#		prevL = -1
+#		for E, L, boundPsi in self.Boundstates.IterateBoundstates():
+#			#Get the local indices corresponding to the local L
+#			LFilter = lambda idx: idx.L == L
+#			indexL = GetLocalCoupledSphericalHarmonicIndices(psi, LFilter)
+#		
+#			#Copy the part of psi corresponding to the current L to a 
+#			#single-L wavefunction to do projection.
+#			if not L == prevL:
+#				projPsi = curPsi.Copy()
+#				projPsi.GetData()[:] = psi.GetData()[indexL, :, :]
+#		
+#			curProjList = []
+#			#calculate projection
+#			proj = projPsi.InnerProduct(eigPsi)
+#			curProjList.append(proj)
+#			#remove projection
+#			psi.GetData()[indexL, :, :] -= proj * eigPsi.GetData()
+#		
+#			projectionList.append(curProjList)
+#
+#		return projectionList
+#
+
+@RegisterAll
+class ProductStateProjector(Projector):
+	"""
+	Implements a product state projector: P = sum_a |a><a|, where
+	|a> = |left_a>|right_a>
+
+	Implements
+	----------
+	GetPopulationProductStates(psi)
+	  Calculate absolute square of projection onto all combination of
+	  product states
+	  
+	GetProjectionRadialStates(psi, lLeft, lRight)
+	  Calculate the projection onto radial angular momentum states
+	"""
+
+	def __init__(self, conf, modelLeft, modelRight, leftFilter, rightFilter):
+		self.Config = conf
+		self.EnergyFilterLeft = leftFilter
+		self.EnergyFilterRight = rightFilter
+		self.SingleStatesLeft = SingleParticleStates(modelLeft, conf)
+		self.SingleStatesRight = SingleParticleStates(modelRight, conf)
+
+		#add here: filter on L's
+
+
+	def ProjectOnto(self, psi):
+		raise NotImplementedError("Not implemented yet!")
+
+
+	def ProjectOntoComplement(self, psi):
+		raise NotImplementedError("Not implemented yet!")
+
+
+	def GetPopulationProductStates(psi):
+		"""
+		Calculates the population of psi in a set of single electron product
+		states:
+
+		P_i =  |< SingleState1_i(1), SingleState2_j(2) | psi(1,2) >|^2
+
+		The projection is carried out for every combination of singlestate1
+		and singlestate2i is returned in a similar structure.
+
+		Input
+		-----
+		psi: a pyprop wavefunction
+		singleStates1: SingleParticleStates instance
+		singleStates2: another SingleParticleStates instance
+
+		Returns: projections onto all combinations of states
+
+		"""
+		population = []
+
+		#Make a copy of the wavefunction and multiply 
+		#integration weights and overlap matrix
+		tempPsi = psi.Copy()
+		repr = psi.GetRepresentation()
+		repr.MultiplyIntegrationWeights(tempPsi)
+		data = tempPsi.GetData()
+
+		itLeftStates = self.SingleStatesLeft.IterateFilteredRadialStates
+		itRightStates = self.SingleStatesRight.IterateFilteredRadialStates
+		for l1, V1 in itLeftStates(self.EnergyFilterLeft):
+			if V1.size == 0:
 				continue
+			
+			for l2, V2 in itRightStates(self.EnergyFilterRight):
+				if V2.size == 0:
+					continue
 
-			#filter out coupled spherical harmonic indices corresponding to this l
-			lfilter = lambda coupledIndex: coupledIndex.l1 == l1 and coupledIndex.l2 == l2 
-			angularIndices = array(GetLocalCoupledSphericalHarmonicIndices(psi, lfilter), dtype=int32)
+				#filter out coupled spherical harmonic indices corresponding
+				#to this l
+				angularIndices = self._GetFilteredAngularIndices(l1, l2, psi)
+
+				#check that wavefunctions contained given angular momenta
+				if len(angularIndices) == 0:
+					continue
+			
+				#Get the population for every combination of v1 and v2
+				calcPop = CalculatePopulationRadialProductStates
+				projV = calcPop(l1, V1, l2, V2, data, angularIndices)
+				#cursum = sum([p for i1, i2, p in projV])
+				population.append((l1, l2, projV))
+
+		return population
+
+
+	def GetProjectionAllRadialStates(self, psi):
+		"""Return radial state projections (complex)
+		"""
+		radialProjections = []
+
+		#Make a copy of the wavefunction and multiply 
+		#integration weights and overlap matrix
+		tempPsi = psi.Copy()
+		repr = psi.GetRepresentation()
+		repr.MultiplyIntegrationWeights(tempPsi)
+		data = tempPsi.GetData()
+
+		#Get lmax
+		lmax = Getlmax(self.Config)
+
+		def innerLoop(radialProjections):
+			#filter out coupled spherical harmonic indices corresponding
+			#to this l
+			angularIndices = self._GetFilteredAngularIndices(lLeft, lRight, psi)
+	
+			#check that wavefunctions contained given angular momenta
 			if len(angularIndices) == 0:
-				continue
-		
-			#Get the population for every combination of v1 and v2
-			projV = CalculatePopulationRadialProductStates(l1, V1, l2, V2, data, angularIndices)
-			cursum = sum([p for i1, i2, p in projV])
-			population.append((l1, l2, projV))
+				return
+	
+			#get radial states for given angular momenta
+			leftStates = self.SingleStatesLeft.GetFilteredRadialStates
+			rightStates = self.SingleStatesRight.GetFilteredRadialStates
+			Eleft, Vleft = leftStates(lLeft, self.EnergyFilterLeft)
+			Eright, Vright = rightStates(lRight, self.EnergyFilterRight)
 
-	return population
+			if len(Eleft) == 0 or len(Eright) == 0:
+				return
+	
+			#calculate projections
+			#print lLeft, Vleft.shape, lRight, Vright.shape, data.shape, \
+			#	len(angularIndices)
+			#sys.stdout.flush()
+			projV = CalculateProjectionRadialProductStates(lLeft, Vleft, lRight, Vright, data, angularIndices)
+			
+			radialProjections += [(lLeft, lRight, projV)]
 
 
-def GetPopulationEigenstates(psi, eigenstates):
-	"""
-	Project psi on all eigenstates and return populations
-	"""
-	raise NotImplementedError("Not implemented yet!")
+		#iterate over all lLeft, lRight combinations
+		for lLeft in range(lmax+1):
+			for lRight in range(lmax+1):
+				
+				#calculate radial projections
+				innerLoop(radialProjections)
+
+		return radialProjections
+
+
+	def _GetFilteredAngularIndices(self, l1, l2, psi):
+		#filter out coupled spherical harmonic indices corresponding
+		#to this l
+		lfilter = lambda coupledIndex: coupledIndex.l1 == l1 and \
+			coupledIndex.l2 == l2 
+		angularIndices = \
+			GetLocalCoupledSphericalHarmonicIndices(psi, lfilter)
+		angularIndices = array(angularIndices, dtype = int32)
+
+		return angularIndices
 

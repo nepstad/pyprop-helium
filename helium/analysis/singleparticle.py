@@ -1,5 +1,5 @@
 """
-SingleParticle
+singleparticle
 ==============
 
 Basic single particle states operations are provided. These are:
@@ -13,31 +13,28 @@ SingleParticleStates
 
 """
 from __future__ import with_statement
-from ..utils import RegisterAll
-
-from ..namecontroller import namegenerator as NameGen
+from numpy import array, zeros, arctan2, exp, transpose, double, complex, \
+	imag, real
 import tables
 import pyprop
-from numpy import array, zeros, arctan2, exp, transpose, double, complex, imag, real
 
+from ..utils import RegisterAll
+from ..namecontroller import namegenerator as NameGen
 
-class States:
-	pass
 
 @RegisterAll
-class SingleParticleStates(States):
+class SingleParticleStates(object):
 	"""
 	Provide single particle states data
 
-	get names, load data, nice interface
+	get names, load data, nice interface...
 	"""
 
-	def __init__(self, model, energyFilter, conf, ordering="ln"):
+	def __init__(self, model, conf, ordering="ln"):
 		"""
 		"""
 		self.Config = conf
 		self.Model = model
-		self.EnergyFilter = energyFilter
 		self.Ordering = "ln"
 		self.__States =  {}
 		self.__Energies = {}
@@ -46,39 +43,53 @@ class SingleParticleStates(States):
 		self.FileName = NameGen.GetSingleParticleStatesFilename(conf, model)
 
 		#Load single particle states
-		self.__Load()
+		self._Load()
 
 
-	def GetRadialStates(self, l):
-		"""
+	def GetFilteredRadialStates(self, l, energyFilter):
+		"""Return angular momentum eigenstates
+
 		Return all radial states corresponding to angular momentum 'l'
-		and matching energy conditions in self.StateFilter.
+		and matching energy conditions in 'energyFilter'.
 
 		Input
 		-----
 		l: angular momentum
 
 		Returns: energies (1D array) and eigenstates (2D array)
+
 		"""
 		numStates = self.__States[l].shape[1]
-		E = self.__Energies[l]
 		V = self.__States[l]
-		filteredStates = array([V[:,i] for i in range(numStates) if self.EnergyFilter(E[i])])
+		E = self.__Energies[l]
 
-		filteredEnergies = filter(self.EnergyFilter, self.__Energies[l])
+		filteredStates = array([V[:,i] for i in range(numStates) if \
+			energyFilter(E[i])])
+		filteredEnergies = self.GetRadialEnergies(l, energyFilter)
 
 		return filteredEnergies, filteredStates.transpose()
 
 	
-	def IterateRadialStates(self):
+	def IterateFilteredRadialStates(self, energyFilter):
 		"""
 		"""
 		for l in self.__States.iterkeys():
-			E,V = self.GetRadialStates(l)
+			E,V = self.GetFilteredRadialStates(l, energyFilter)
 			yield int(l), V
 
 
-	def __Load(self):
+	def GetRadialEnergies(self, l, energyFilter):
+		E = self.__Energies[l]
+		filteredEnergies = filter(energyFilter, self.__Energies[l])
+		return filteredEnergies
+
+
+	def GetNumberOfStates(self, l, energyFilter):
+		E, V = self.GetFilteredRadialStates(l, energyFilter)
+		return len(E)
+
+
+	def _Load(self):
 		"""
 		Load single particle states from file.
 		"""

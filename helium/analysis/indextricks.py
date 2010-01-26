@@ -12,6 +12,16 @@ def GetLocalCoupledSphericalHarmonicIndices(psi, coupledIndexFilter):
 	"""
 	Returns the processor local indices which corresponds to a filter on
 	l1, l2, L, M
+
+	Input
+	-----
+	psi: pyprop wavefunction
+	coupledIndexFilter: a function defining a coupled spherical harmonics filter
+
+	Output
+	------
+	A list of local filtered indices
+
 	"""
 	angularRank = GetAngularRankIndex(psi)
 	

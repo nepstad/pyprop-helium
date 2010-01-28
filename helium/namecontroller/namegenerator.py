@@ -17,7 +17,7 @@ from postfixgenerator import GetRadialPostfix, GetAngularPostfix
 from ..utils import RegisterAll, RegisterProjectNamespace
 
 from pyprop import Config
-from numpy import unique, int32
+from numpy import unique, int32, array
 import os
 
 
@@ -68,10 +68,10 @@ def GetAllBoundstateFilenames(conf):
 	"""
 	
 	#Get unique list of Ls
-	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator], dtype=int32)
+	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator])
 
 	#Construct file list
-	fileList = [GetBoundstatesFilename(conf, L=L) for L in Llist]
+	fileList = [GetBoundstatesFilename(conf, L=int(L)) for L in Llist]
 
 	#Filter out non-existing files
 	filteredFileList = filter(os.path.exists, fileList)
@@ -107,4 +107,12 @@ def GetSingleParticleStatesFilename(conf, model):
 		raise Exception("Could not find single-particle data file!")
 
 	return singleStatesFiles[0]
+
+
+def GetEigenvectorDatasetName(eigenvectorIndex):
+	return "Eigenvector_%i" % eigenvectorIndex 
+
+
+def GetEigenvectorDatasetPath(eigenvectorIndex):
+	return "/Eig/%s" % GetEigenvectorDatasetName(eigenvectorIndex) 
 

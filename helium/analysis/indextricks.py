@@ -4,8 +4,22 @@ IndexTricks
 """
 
 from numpy import r_,  array
-from ..utils import GetAngularRankIndex, RegisterAll
+from ..utils import RegisterAll
 import sys
+
+
+@RegisterAll
+def GetAngularRankIndex(psi):
+	"""Return the angular rank index of a wavefunction
+	"""
+	angIdx = ([i for i in range(psi.GetRank()) if \
+		(psi.GetRepresentation().GetRepresentation(i).__class__ == \
+		pyprop.core.CoupledSphericalHarmonicRepresentation)][0])
+
+	#hack: convert numpy int64 to int (boost::python/numpy issue
+	#on 64bit machines)
+	return int(angIdx)
+
 
 @RegisterAll
 def GetLocalCoupledSphericalHarmonicIndices(psi, coupledIndexFilter):

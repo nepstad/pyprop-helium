@@ -6,11 +6,11 @@ Extract 'observables' from wavefunction: expectation values,
 integrated/differential probabilities, etc.
 
 """
-
+import logging
 from numpy import real, linspace, meshgrid, outer, diff, zeros, double
 from numpy import abs as nabs
 from scipy.interpolate import RectBivariateSpline
-from ..utils import RegisterAll
+from helium.utils import RegisterAll, GetClassLogger
 from helium.analysis.projectors import EigenstateProjector
 from helium.analysis.projectors import ProductStateProjector 
 
@@ -43,9 +43,16 @@ class DoubleContinuumObservables(object):
 
 		"""
 		self.Psi = psi
+		#get logger
+		self.Logger = GetClassLogger(self)
+
+		#setup bound state projector
+		self.Logger.info("Setting up bound state projector...")
 		self.BoundstateProjector = EigenstateProjector(conf)
-		#isIonized = lambda E: 0.0 < E < 0.1
-		self.IsIonizedFilter = lambda E: 0.0 < E < 0.1
+
+		#setup product state projector
+		self.Logger.info("Setting up product state projector...")
+		self.IsIonizedFilter = lambda E: 0.0 < E < 0.05
 		ionF = self.IsIonizedFilter
 		self.DoubleContinuumProjector = \
 				ProductStateProjector(conf, "he+", "he+", ionF, ionF)
@@ -64,6 +71,7 @@ class DoubleContinuumObservables(object):
 		self.RadialProjections = None
 
 
+	
 	def Setup(self):
 		"""
 		"""
@@ -71,7 +79,9 @@ class DoubleContinuumObservables(object):
 		self.AbsorbedProbability = 1.0 - real(self.Psi.InnerProduct(self.Psi))
 
 		#Step 2: remove projection onto bound states
-		self.BoundstateProjector.RemoveProjection(self.Psi)
+		self.Logger.info("Removing bound states projection...")
+		ionThreshold = -2.1
+		self.BoundstateProjector.RemoveProjection(self.Psi, ionThreshold)
 		self.TotalIonizationProbability = real(self.Psi.InnerProduct(self.Psi))
 		
 		#Step 3: remove other projections
@@ -85,9 +95,8 @@ class DoubleContinuumObservables(object):
 
 
 	def GetDoubleIonizationProbability(self):
+		"""Calculate double ionization probability
 		"""
-		"""
-
 		#check if double ionization is already calculated, if so, 
 		#just use buffered value
 		if not self.DoubleIonizationIsCalculated:
@@ -100,9 +109,14 @@ class DoubleContinuumObservables(object):
 
 
 	def GetEnergyDistribution(self):
+		"""Calculate double ionization energy distribution
+		"""
 		maxE = 1.0
 		E = linspace(0, maxE, 300)
 		dpde = zeros((len(E), len(E)), dtype=double)
+
+		#to store double ionization prob before interpolation
+		doubleIonProb = 0
 
 		#for every l-pair (l1, l2) we have a set of (i1, i2) states
 		#In order to create an approx to dp/de_1 de_2, we make a 2d 
@@ -117,6 +131,9 @@ class DoubleContinuumObservables(object):
 			#sum up angular momentum components
 			pop = (nabs(lPop)**2).sum(axis=0).reshape(n1, n2)
 
+			#add contribution to total double ionization prob.
+			doubleIonProb += sum(pop)
+
 			#scale states with 1/dE_1 dE_2
 			E1 = P.SingleStatesLeft.GetRadialEnergies(l1, self.IsIonizedFilter)
 			E2 = P.SingleStatesRight.GetRadialEnergies(l2, self.IsIonizedFilter)
@@ -124,18 +141,18 @@ class DoubleContinuumObservables(object):
 			
 			#2d interpolation over all states in this shell
 			interpolator = RectBivariateSpline(E1[:-1], E2[:-1], pop[:-1, :-1], kx=1, ky=1)
+
+			#evaluate on given energy points, and add to total dpde
 			dpde += interpolator(E, E)
 
 		#Calculate double ionization probability to check interpolation
-		#lpop = [sum([p for i1, i2, p in pop]) for l1, l2, pop in populations]
-		#doubleIonizationProbability = sum(lpop)
-		#relErrIonProb = abs(doubleIonizationProbability - sum(dpde) * diff(E)[0]**2)/doubleIonizationProbability
-		#if relErrIonProb > 0.01:
-		#	warnings.warn("Integrating dP/dE1dE2 does not give correct double ionization probability: relerr = %s." % relErrIonProb, RuntimeWarning)
-		#pyprop.Redirect.Disable()
-		#print "Double ionization probability = ", doubleIonizationProbability
-		#print "Double ionization probability (integrated) = ", sum(dpde) * diff(E)[0]**2
-		#pyprop.Redirect.Enable(True)
+		absErrIonProb = abs(doubleIonProb - sum(dpde) * diff(E)[0]**2)
+		relErrIonProb = absErrIonProb/doubleIobProb
+		if relErrIonProb > 0.01:
+			warnMsg = "Integrating dP/dE1dE2 does not give correct double ionization probability"
+			self.Logger.warning("%s: relerr = %s, abserr = %s." % (warnMsg, relErrIonProb, abserr))
+		else :
+			self.Logger.debug("Difference in double ionization probability after interpolation: %s" % abserr)
 
 		return E, dpde
 

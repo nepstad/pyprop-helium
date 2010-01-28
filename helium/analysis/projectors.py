@@ -8,8 +8,9 @@ Calculates projection of wavefunction onto various set of states.
 import sys
 from numpy import array, int32
 from indextricks import GetLocalCoupledSphericalHarmonicIndices
-from ..utils import RegisterAll
-from ..configtools import Getlmax
+from helium.utils import RegisterAll
+from helium.configtools import Getlmax
+from helium.eigenvalues.eigenstates import Eigenstates
 from singleparticle import SingleParticleStates
 from libheliumanalysis import CalculatePopulationRadialProductStates
 from libheliumanalysis import CalculateProjectionRadialProductStates
@@ -41,11 +42,13 @@ class SymmetryProjector(Projector):
 @RegisterAll
 class EigenstateProjector(Projector):
 	"""
+	Implements a atomic eigenstate projector: P = sum_a |a><a|, where
+	H|a> = E_a|a>. 
 	"""
 
 	def __init__(self, conf):
 		self.Config = conf
-		#self.BoundStates = Boundstates(conf)
+		self.Eigenstates = Eigenstates(conf)
 
 
 	def ProjectOnto(self, psi):
@@ -55,33 +58,33 @@ class EigenstateProjector(Projector):
 		pass
 
 	
-	def RemoveProjection(self, psi):
-		pass
-#		projectionList = []
-#
-#		prevL = -1
-#		for E, L, boundPsi in self.Boundstates.IterateBoundstates():
-#			#Get the local indices corresponding to the local L
-#			LFilter = lambda idx: idx.L == L
-#			indexL = GetLocalCoupledSphericalHarmonicIndices(psi, LFilter)
-#		
-#			#Copy the part of psi corresponding to the current L to a 
-#			#single-L wavefunction to do projection.
-#			if not L == prevL:
-#				projPsi = curPsi.Copy()
-#				projPsi.GetData()[:] = psi.GetData()[indexL, :, :]
-#		
-#			curProjList = []
-#			#calculate projection
-#			proj = projPsi.InnerProduct(eigPsi)
-#			curProjList.append(proj)
-#			#remove projection
-#			psi.GetData()[indexL, :, :] -= proj * eigPsi.GetData()
-#		
-#			projectionList.append(curProjList)
-#
-#		return projectionList
-#
+	def RemoveProjection(self, psi, ionThreshold):
+		"""Remove bound part of psi
+		"""
+		prevL = -1
+		
+		#work buffer wavefunction
+		projPsi = psi.Copy()
+
+		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(ionThreshold):
+			#Get the local indices corresponding to the local L
+			LFilter = lambda idx: idx.L == L
+			indexL = GetLocalCoupledSphericalHarmonicIndices(psi, LFilter)
+		
+			#Copy the part of psi corresponding to the current L to a 
+			#single-L wavefunction to do projection.
+			if not L == prevL:
+				projPsi.GetData()[:] = psi.GetData()[indexL, :, :]
+				prevL = L
+		
+			curProjList = []
+			#calculate projection
+			proj = projPsi.InnerProduct(eigPsi)
+			curProjList.append(proj)
+
+			#remove projection
+			psi.GetData()[indexL, :, :] -= proj * eigPsi.GetData()
+		
 
 @RegisterAll
 class ProductStateProjector(Projector):
@@ -209,7 +212,8 @@ class ProductStateProjector(Projector):
 			#print lLeft, Vleft.shape, lRight, Vright.shape, data.shape, \
 			#	len(angularIndices)
 			#sys.stdout.flush()
-			projV = CalculateProjectionRadialProductStates(lLeft, Vleft, lRight, Vright, data, angularIndices)
+			projV = CalculateProjectionRadialProductStates(lLeft, Vleft, \
+					lRight, Vright, data, angularIndices)
 			
 			radialProjections += [(lLeft, lRight, projV)]
 

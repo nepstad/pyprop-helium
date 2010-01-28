@@ -6,6 +6,7 @@ Misc utilities are put here for now.
 """
 
 import sys
+import logging
 import pyprop.core
 from pyprop.core import CoupledSphericalHarmonicRepresentation as \
 	coupledSphRepr
@@ -43,7 +44,8 @@ def RegisterProjectNamespace(obj):
 	  http://code.activestate.com/recipes/576993/
 	"""
 	global ProjectNamespace
-	if obj.__name__ not in ProjectNamespace:  # Prevent duplicates if run from an IDE.
+	# Prevent duplicates if run from an IDE.
+	if obj.__name__ not in ProjectNamespace:  		
 		ProjectNamespace += [obj]
 	return obj
 
@@ -67,12 +69,13 @@ def UpdatePypropProjectNamespace(pypropProjNamespace):
 
 
 @RegisterAll
-def GetAngularRankIndex(psi):
-	angIdx = ([i for i in range(psi.GetRank()) if \
-		(psi.GetRepresentation().GetRepresentation(i).__class__ == \
-		pyprop.core.CoupledSphericalHarmonicRepresentation)][0])
+def GetClassLogger(obj):
+	"""Return a logger for 'obj'
 
-	#hack: convert numpy int64 to int (boost::python/numpy issue
-	#on 64bit machines)
-	return int(angIdx)
+	Using attribute __module__ and __name__ of 'obj.__class__', create
+	a logger with full path name.
+	"""
+	cls = obj.__class__
+	return logging.getLogger("%s.%s" % (cls.__module__, cls.__name__))
+
 

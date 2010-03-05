@@ -64,7 +64,7 @@ class EigenstateProjector(Projector):
 		prevL = -1
 		
 		#work buffer wavefunction
-		projPsi = psi.Copy()
+		projPsi = self.Eigenstates.GetBoundstates(0, ionThreshold)[0].Copy()
 
 		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(ionThreshold):
 			#Get the local indices corresponding to the local L
@@ -79,11 +79,11 @@ class EigenstateProjector(Projector):
 		
 			curProjList = []
 			#calculate projection
-			proj = projPsi.InnerProduct(eigPsi)
+			proj = projPsi.InnerProduct(boundPsi)
 			curProjList.append(proj)
 
 			#remove projection
-			psi.GetData()[indexL, :, :] -= proj * eigPsi.GetData()
+			psi.GetData()[indexL, :, :] -= proj * boundPsi.GetData()
 		
 
 @RegisterAll

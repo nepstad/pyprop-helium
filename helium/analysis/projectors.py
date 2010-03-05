@@ -65,6 +65,7 @@ class EigenstateProjector(Projector):
 		
 		#work buffer wavefunction
 		projPsi = self.Eigenstates.GetBoundstates(0, ionThreshold)[0].Copy()
+		projPsi.Clear()
 
 		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(ionThreshold):
 			#Get the local indices corresponding to the local L
@@ -74,6 +75,10 @@ class EigenstateProjector(Projector):
 			#Copy the part of psi corresponding to the current L to a 
 			#single-L wavefunction to do projection.
 			if not L == prevL:
+				#check shape of workbuffer; create new if wrong
+				if projPsi.GetData().shape != boundPsi.GetData().shape:
+					projPsi = boundPsi.Copy()
+
 				projPsi.GetData()[:] = psi.GetData()[indexL, :, :]
 				prevL = L
 		
@@ -208,12 +213,15 @@ class ProductStateProjector(Projector):
 			if len(Eleft) == 0 or len(Eright) == 0:
 				return
 	
-			#calculate projections
+			#calculate projections. we define a function here
+			#to get profiling information in python
 			#print lLeft, Vleft.shape, lRight, Vright.shape, data.shape, \
 			#	len(angularIndices)
 			#sys.stdout.flush()
-			projV = CalculateProjectionRadialProductStates(lLeft, Vleft, \
-					lRight, Vright, data, angularIndices)
+			def calculateProjectionCpp():
+				return CalculateProjectionRadialProductStates(lLeft, Vleft, \
+						lRight, Vright, data, angularIndices)
+			projV = calculateProjectionCpp()
 			
 			radialProjections += [(lLeft, lRight, projV)]
 

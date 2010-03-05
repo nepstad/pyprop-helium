@@ -1,4 +1,8 @@
-siteconfig.py
 tests
 test-data
 pyprop
+*.o
+*.so
+*.pyc
+.deps*
+.*.swp

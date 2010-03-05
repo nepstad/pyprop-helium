@@ -6,6 +6,7 @@ IndexTricks
 from numpy import r_,  array
 from ..utils import RegisterAll
 import sys
+import pyprop
 
 
 @RegisterAll

@@ -52,7 +52,7 @@ class DoubleContinuumObservables(object):
 
 		#setup product state projector
 		self.Logger.info("Setting up product state projector...")
-		self.IsIonizedFilter = lambda E: 0.0 < E < 0.05
+		self.IsIonizedFilter = lambda E: 0.0 < E
 		ionF = self.IsIonizedFilter
 		self.DoubleContinuumProjector = \
 				ProductStateProjector(conf, "he+", "he+", ionF, ionF)
@@ -82,7 +82,7 @@ class DoubleContinuumObservables(object):
 		self.Logger.info("Removing bound states projection...")
 		ionThreshold = -2.1
 		self.BoundstateProjector.RemoveProjection(self.Psi, ionThreshold)
-		self.TotalIonizationProbability = real(self.Psi.InnerProduct(self.Psi))
+		self.TotalIonizationProbability = self.Psi.InnerProduct(self.Psi).real
 		
 		#Step 3: remove other projections
 		for P in self.OtherProjectors:
@@ -108,11 +108,11 @@ class DoubleContinuumObservables(object):
 		return self.DoubleIonizationProbability
 
 
-	def GetEnergyDistribution(self):
+	def GetEnergyDistribution(self, maxEnergy, numEnergyPoints):
 		"""Calculate double ionization energy distribution
 		"""
-		maxE = 1.0
-		E = linspace(0, maxE, 300)
+		#maxE = 1.0
+		E = linspace(0, maxEnergy, numEnergyPoints)
 		dpde = zeros((len(E), len(E)), dtype=double)
 
 		#to store double ionization prob before interpolation
@@ -132,7 +132,7 @@ class DoubleContinuumObservables(object):
 			pop = (nabs(lPop)**2).sum(axis=0).reshape(n1, n2)
 
 			#add contribution to total double ionization prob.
-			doubleIonProb += sum(pop)
+			doubleIonProb += sum(pop.flatten())
 
 			#scale states with 1/dE_1 dE_2
 			E1 = P.SingleStatesLeft.GetRadialEnergies(l1, self.IsIonizedFilter)
@@ -140,19 +140,20 @@ class DoubleContinuumObservables(object):
 			pop[:-1,:-1] /= outer(diff(E1), diff(E2))
 			
 			#2d interpolation over all states in this shell
-			interpolator = RectBivariateSpline(E1[:-1], E2[:-1], pop[:-1, :-1], kx=1, ky=1)
+			interpolator = RectBivariateSpline(E1[:-1], E2[:-1], pop[:-1, :-1], kx=1, ky=1, s=0.0)
 
 			#evaluate on given energy points, and add to total dpde
 			dpde += interpolator(E, E)
 
 		#Calculate double ionization probability to check interpolation
-		absErrIonProb = abs(doubleIonProb - sum(dpde) * diff(E)[0]**2)
-		relErrIonProb = absErrIonProb/doubleIobProb
+		absErrIonProb = abs(doubleIonProb - sum(dpde.flatten()) * diff(E)[0]**2)
+		relErrIonProb = absErrIonProb/doubleIonProb
+		self.Logger.debug("Integrated double ionization probability: %s" % doubleIonProb)
 		if relErrIonProb > 0.01:
 			warnMsg = "Integrating dP/dE1dE2 does not give correct double ionization probability"
-			self.Logger.warning("%s: relerr = %s, abserr = %s." % (warnMsg, relErrIonProb, abserr))
+			self.Logger.warning("%s: relerr = %s, abserr = %s." % (warnMsg, relErrIonProb, absErrIonProb))
 		else :
-			self.Logger.debug("Difference in double ionization probability after interpolation: %s" % abserr)
+			self.Logger.debug("Difference in double ionization probability after interpolation: %s" % absErrIonProb)
 
 		return E, dpde
 

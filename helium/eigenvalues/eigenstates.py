@@ -12,6 +12,7 @@ Basic eigenstate operations are provided. These are:
 """
 from __future__ import with_statement
 import tables
+from numpy import r_
 import pyprop
 from helium.utils import RegisterAll
 from helium.namecontroller import namegenerator as NameGen
@@ -39,7 +40,7 @@ class Eigenstates(object):
 		"""
 		E = self._Energies[L]
 		boundIdx = filter(lambda i: E[i] < ionizationThreshold, r_[:len(E)])
-		boundStates = [self._States[l][idx] for idx in boundIdx]
+		boundStates = [self._States[L][idx] for idx in boundIdx]
 
 		return boundStates
 

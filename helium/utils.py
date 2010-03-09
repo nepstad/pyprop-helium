@@ -7,6 +7,7 @@ Misc utilities are put here for now.
 
 import sys
 import logging
+import inspect
 import pyprop.core
 from pyprop.core import CoupledSphericalHarmonicRepresentation as \
 	coupledSphRepr
@@ -77,5 +78,18 @@ def GetClassLogger(obj):
 	"""
 	cls = obj.__class__
 	return logging.getLogger("%s.%s" % (cls.__module__, cls.__name__))
+
+
+@RegisterAll
+def GetFunctionLogger():
+	"""Return a logger for calling function
+	
+	Using the 'inspect' module, determine information about the
+	calling function, and create the appropriate logger.
+	"""
+	callerFrame = inspect.stack()[1]
+	moduleName = inspect.getmodule(callerFrame[0]).__name__
+	functionName = callerFrame[3]
+	return logging.getLogger("%s.%s" % (moduleName, functionName))
 
 

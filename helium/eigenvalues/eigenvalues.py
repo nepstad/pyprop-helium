@@ -16,7 +16,7 @@ from pyprop import AnasaziSolver
 from pyprop.serialization import RemoveExistingDataset
 import helium
 from helium.namecontroller import namegenerator as NameGen
-from helium.utils import RegisterAll, GetClassLogger
+from helium.utils import RegisterAll, GetFunctionLogger
 
 MODULE_NAME = __name__
 
@@ -69,7 +69,8 @@ def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
 	Saves the output of FindEigenvaluesNearShift, including error estimates 
 	to a hdf file.
 	"""
-	logger = logging.getLogger("%s.%s" % (MODULE_NAME, __name__))
+	#logger = logging.getLogger("%s.%s" % (MODULE_NAME, __name__))
+	logger = GetFunctionLogger()
 
 	conf = solver.BaseProblem.Config
 	L = conf.AngularRepresentation.index_iterator.L

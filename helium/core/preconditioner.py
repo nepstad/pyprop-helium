@@ -8,7 +8,9 @@ RadialTwoElectronPreconditionerSuperLU
 RadialTwoElectronPreconditionerIfpack
 """
 
-__all__ = ["RadialTwoElectronPreconditionerSuperLU", "RadialTwoElectronPreconditionerSuperLU"]
+import pyprop
+from pyprop.core import IfpackRadialPreconditioner_2
+from helium.utils import RegisterAll, RegisterProjectNamespace
 
 def GetRadialMatricesCompressedCol(pot, psi):
 	"""
@@ -164,6 +166,8 @@ class RadialTwoElectronPreconditioner:
 
 
 
+@RegisterProjectNamespace
+@RegisterAll
 class RadialTwoElectronPreconditionerSuperLU(RadialTwoElectronPreconditioner):
 	"""
 	Radial Preconditioner using SuperLU to exactly factorize
@@ -210,6 +214,8 @@ class RadialTwoElectronPreconditionerSuperLU(RadialTwoElectronPreconditioner):
 		
 
 
+@RegisterProjectNamespace
+@RegisterAll
 class RadialTwoElectronPreconditionerIfpack(RadialTwoElectronPreconditioner):
 	"""
 	RadialPreconditioner using Ifpack (ILU) to 

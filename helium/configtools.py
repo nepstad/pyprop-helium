@@ -9,14 +9,26 @@ from utils import RegisterAll
 
 @RegisterAll
 def Getlmax(conf):
+	"""Return lmax from a pyprop config instance
+
+	Input
+	-----
+	conf: a pyprop config object
+
+	Returns
+	-------
+	lmax: (int) maximum (single-particle) angular momentum
+
+	"""
 	indexIt = conf.AngularRepresentation.index_iterator
 	lmax = max(array([idx.l1 for idx in indexIt]))
 
 	return lmax
 
+
 @RegisterAll
 def GetL(conf):
-	"""Return L from config file
+	"""Return L from a pyprop config instance
 
 	Looks up L from given index_interator inAngularRepresentation config
 	section. If L is not unique, raise exception.
@@ -32,6 +44,7 @@ def GetL(conf):
 	Raises
 	------
 	If L is not uniquely specified, raise exception
+
 	"""
 	indexIterator = conf.AngularRepresentation.index_iterator
 	Llist = array([idx.L for idx in indexIterator])

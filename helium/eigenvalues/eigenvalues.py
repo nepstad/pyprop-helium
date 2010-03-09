@@ -7,13 +7,18 @@ methods for finding some eigenvalues of a large Hamiltonian
 
 """
 
-from numpy import where
+import os
+from numpy import where, array
 import logging
+import tables
 import pyprop
 from pyprop import AnasaziSolver
+from pyprop.serialization import RemoveExistingDataset
 import helium
 from helium.namecontroller import namegenerator as NameGen
-from helium.utils import RegisterAll
+from helium.utils import RegisterAll, GetClassLogger
+
+MODULE_NAME = __name__
 
 @RegisterAll
 def FindEigenvaluesInverseIterationsPiram(conf):
@@ -57,4 +62,67 @@ def FindEigenvaluesInverseIterationsPiram(conf):
 	eigenvalues = 1.0 / eigenvalues + shift
 
 	return solver, shiftInvertSolver, eigenvalues
+
+@RegisterAll
+def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
+	"""
+	Saves the output of FindEigenvaluesNearShift, including error estimates 
+	to a hdf file.
+	"""
+	logger = logging.getLogger("%s.%s" % (MODULE_NAME, __name__))
+
+	conf = solver.BaseProblem.Config
+	L = conf.AngularRepresentation.index_iterator.L
+	assert len(L) == 1
+	shift = conf.Arpack.shift
+
+	#generate filename
+	filename = NameGen.GetBoundstatesFilename(conf, L[0])
+
+	#Get eigenvalue error estimates
+	errorEstimatesPIRAM = solver.Solver.GetErrorEstimates()
+	convergenceEstimatesEig = solver.Solver.GetConvergenceEstimates()
+	errorEstimatesGMRES = shiftInvertSolver.Solver.GetErrorEstimateList()
+
+	#Get eigenvalues
+	prop = solver.BaseProblem
+	E = 1.0 / array(solver.GetEigenvalues()) + shift
+
+	#remove file if it exists
+	try:
+		if os.path.exists(filename):
+			if pyprop.ProcId == 0:
+				os.remove(filename)
+	except:
+		logger.error("Could not remove %s (%s)" % (filename, sys.exc_info()[1]))
+
+	#Store eigenvalues and eigenvectors
+	logger.info("Now storing eigenvectors...")
+	for i in range(len(E)):
+		solver.SetEigenvector(prop.psi, i)
+		prop.SaveWavefunctionHDF(filename, NameGen.GetEigenvectorDatasetPath(i))
+
+	if pyprop.ProcId == 0:
+		RemoveExistingDataset(filename, "/Eig/Eigenvalues")
+		RemoveExistingDataset(filename, "/Eig/ErrorEstimateListGMRES")
+		RemoveExistingDataset(filename, "/Eig/ErrorEstimateListPIRAM")
+		RemoveExistingDataset(filename, "/Eig/ConvergenceEstimateEig")
+		h5file = tables.openFile(filename, "r+")
+		try:
+			#myGroup = h5file.createGroup("/", "Eig")
+			myGroup = h5file.getNode("/Eig")
+			h5file.createArray(myGroup, "Eigenvalues", E)
+			h5file.createArray(myGroup, "ErrorEstimateListGMRES", errorEstimatesGMRES)
+			h5file.createArray(myGroup, "ErrorEstimateListPIRAM", errorEstimatesPIRAM)
+			h5file.createArray(myGroup, "ConvergenceEstimateEig", convergenceEstimatesEig)
+
+			#Store config
+			myGroup._v_attrs.configObject = prop.Config.cfgObj
+			
+			#PIRAM stats
+			myGroup._v_attrs.opCount = solver.Solver.GetOperatorCount()
+			myGroup._v_attrs.restartCount = solver.Solver.GetRestartCount()
+			myGroup._v_attrs.orthCount = solver.Solver.GetOrthogonalizationCount()
+		finally:
+			h5file.close()
 

@@ -8,8 +8,10 @@ RadialTwoElectronPreconditionerSuperLU
 RadialTwoElectronPreconditionerIfpack
 """
 
+from numpy import zeros, int, int32, complex, argsort
 import pyprop
 from pyprop.core import IfpackRadialPreconditioner_2
+from helium.core.libheliumcore import SuperLUSolver_2
 from helium.utils import RegisterAll, RegisterProjectNamespace
 
 def GetRadialMatricesCompressedCol(pot, psi):

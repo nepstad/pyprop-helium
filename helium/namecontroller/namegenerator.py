@@ -15,12 +15,14 @@ from postfixgenerator import GetRadialPostfix, GetAngularPostfix
 from ..utils import RegisterAll, RegisterProjectNamespace
 
 from pyprop import Config
+from pyprop.utilities import IntensitySIFromElectricFieldAtomic
 from numpy import unique, int32, array
 import os
 
 
+@RegisterProjectNamespace
 @RegisterAll
-def GetBoundstatesFilename(conf, L):
+def GetBoundstateFilename(conf, L):
 	"""Return filename of some angular momentum bound states.
 
 	Generate the name of a file where bound states associated with a given
@@ -107,10 +109,12 @@ def GetSingleParticleStatesFilename(conf, model):
 	return singleStatesFiles[0]
 
 
+@RegisterAll
 def GetEigenvectorDatasetName(eigenvectorIndex):
 	return "Eigenvector_%i" % eigenvectorIndex 
 
 
+@RegisterAll
 def GetEigenvectorDatasetPath(eigenvectorIndex):
 	return "/Eig/%s" % GetEigenvectorDatasetName(eigenvectorIndex) 
 

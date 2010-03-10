@@ -6,6 +6,7 @@ Supply time dependence for time-dependent potentials, such as laser fields.
 """
 
 from ..utils import RegisterAll, RegisterProjectNamespace
+from numpy import sin, cos, pi
 
 
 @RegisterProjectNamespace

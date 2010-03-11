@@ -4,7 +4,7 @@ def SetupTasks():
 	tasks = []
 	tasks += [helium.propagation.tasks.SaveWavefunction(True)]
 	tasks += [helium.propagation.tasks.ProgressReport()]
-	tasks += [helium.propagation.tasks.DisplayGMRESError()]
+	#tasks += [helium.propagation.tasks.DisplayGMRESError()]
 	
 	return tasks
 

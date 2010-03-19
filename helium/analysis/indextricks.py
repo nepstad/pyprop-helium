@@ -3,7 +3,7 @@ IndexTricks
 ===========
 """
 
-from numpy import r_,  array
+from numpy import r_
 from ..utils import RegisterAll
 import sys
 import pyprop
@@ -61,4 +61,27 @@ def GetLocalCoupledSphericalHarmonicIndices(psi, coupledIndexFilter):
 
 	return localFilteredIndices
 
+
+@RegisterAll
+def GetCoupledIndexList(psi, angularRank):
+	"""
+	Returns a list of the coupled indices in psi
+	
+	Input
+	-----
+	psi: pyprop wavefunction
+	angularRank: (int) wavefunction angular rank
+	
+
+	Output
+	------
+	A list of coupled indices
+	"""
+	
+	repr = psi.GetRepresentation().GetRepresentation(angularRank)
+	distr = psi.GetRepresentation().GetDistributedModel()
+	nL = repr.GetFullShape()[0]
+	coupledIndexList = map(repr.Range.GetCoupledIndex, range(nL))
+	
+	return coupledIndexList
 

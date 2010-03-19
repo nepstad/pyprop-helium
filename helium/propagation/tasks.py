@@ -9,6 +9,7 @@ from __future__ import with_statement
 import os.path
 import time
 import tables
+import pyprop
 from pyprop import PrintOut
 from helium.utils import RegisterAll, GetClassLogger
 
@@ -21,16 +22,17 @@ def CreatePath(absFileName):
 
 class PropagationTask:
 	def __init__(self):
-		pass
+		raise NotImplementedError("Please implement in derived class")
 	
 	def setupTask(self, prop):
-		pass
+		raise NotImplementedError("Please implement in derived class")
+
 
 	def callback(self, prop):
-		pass
+		raise NotImplementedError("Please implement in derived class")
 
 	def postProcess(self, prop):
-		pass
+		raise NotImplementedError("Please implement in derived class")
 
 
 @RegisterAll
@@ -77,7 +79,7 @@ class ProgressReport(PropagationTask):
 			with tables.openFile(self.OutputFileName, "r+") as h5file:
 				for nodeName in nodeNames:
 					if nodeName in h5file.root:
-						f.removeNode(f.root, nodeName, recursive=True)
+						h5file.removeNode(h5file.root, nodeName, recursive=True)
 
 				h5file.createArray("/", "SampleTimes", self.TimeList)
 				h5file.createArray("/", "Norm", self.NormList)

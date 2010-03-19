@@ -54,7 +54,7 @@ class Eigenstates(object):
 		isBound = lambda en: en < ionizationThreshold
 		boundEnergies = [curE for curE in E if isBound(E)]
 
-		return self._Energies[L][boundIdx]
+		return boundEnergies
 
 
 	def IterateBoundstates(self, ionizationThreshold):

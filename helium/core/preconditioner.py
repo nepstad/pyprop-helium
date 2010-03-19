@@ -161,10 +161,10 @@ class RadialTwoElectronPreconditioner:
 		self.SetupRadialSolvers(tensorPotential)
 
 	def SetupRadialSolvers(self, tensorPotential):
-		raise NotImplementedException("Please Override")
+		raise NotImplementedError("Please Override")
 		
 	def Solve(self, psi):
-		raise NotImplementedException("Please Override")
+		raise NotImplementedError("Please Override")
 
 
 

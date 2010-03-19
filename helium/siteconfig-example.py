@@ -4,4 +4,4 @@ import os
 SingleParticleLocations = [""]
 
 #Path to bound state data
-BoundstateLocations = ""
+BoundstateLocation = ""

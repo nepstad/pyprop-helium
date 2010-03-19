@@ -5,7 +5,6 @@ projectors
 Calculates projection of wavefunction onto various set of states.
 
 """
-import sys
 from numpy import array, int32
 from indextricks import GetLocalCoupledSphericalHarmonicIndices
 from helium.utils import RegisterAll
@@ -25,13 +24,15 @@ class Projector(object):
 	"""
 	
 	def __init__(self):
-		pass
+		raise NotImplementedError("Please implement in derived class")
 
 	def ProjectOnto(self, psi):
-		pass
+		raise NotImplementedError("Please implement in derived class")
+
 
 	def ProjectOntoComplement(self, psi):
-		pass
+		raise NotImplementedError("Please implement in derived class")
+
 
 
 @RegisterAll
@@ -59,7 +60,7 @@ class EigenstateProjector(Projector):
 
 	
 	def RemoveProjection(self, psi, ionThreshold):
-		"""Remove bound part of psi
+		"""Remove bound part of psi in-place
 		"""
 		prevL = -1
 		
@@ -125,7 +126,7 @@ class ProductStateProjector(Projector):
 		raise NotImplementedError("Not implemented yet!")
 
 
-	def GetPopulationProductStates(psi):
+	def GetPopulationProductStates(self, psi):
 		"""
 		Calculates the population of psi in a set of single electron product
 		states:
@@ -165,7 +166,7 @@ class ProductStateProjector(Projector):
 
 				#filter out coupled spherical harmonic indices corresponding
 				#to this l
-				angularIndices = self._GetFilteredAngularIndices(l1, l2, psi)
+				angularIndices = self.__GetFilteredAngularIndices(l1, l2, psi)
 
 				#check that wavefunctions contained given angular momenta
 				if len(angularIndices) == 0:
@@ -181,7 +182,7 @@ class ProductStateProjector(Projector):
 
 
 	def GetProjectionAllRadialStates(self, psi):
-		"""Return radial state projections (complex)
+		"""Return (complex) radial state projections
 		"""
 		radialProjections = []
 
@@ -198,7 +199,7 @@ class ProductStateProjector(Projector):
 		def innerLoop(radialProjections):
 			#filter out coupled spherical harmonic indices corresponding
 			#to this l
-			angularIndices = self._GetFilteredAngularIndices(lLeft, lRight, psi)
+			angularIndices = self.__GetFilteredAngularIndices(lLeft, lRight, psi)
 	
 			#check that wavefunctions contained given angular momenta
 			if len(angularIndices) == 0:
@@ -236,7 +237,7 @@ class ProductStateProjector(Projector):
 		return radialProjections
 
 
-	def _GetFilteredAngularIndices(self, l1, l2, psi):
+	def __GetFilteredAngularIndices(self, l1, l2, psi):
 		#filter out coupled spherical harmonic indices corresponding
 		#to this l
 		lfilter = lambda coupledIndex: coupledIndex.l1 == l1 and \

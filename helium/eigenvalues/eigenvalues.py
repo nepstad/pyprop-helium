@@ -8,17 +8,14 @@ methods for finding some eigenvalues of a large Hamiltonian
 """
 
 import os
+import sys
 from numpy import where, array
-import logging
 import tables
 import pyprop
 from pyprop import AnasaziSolver
 from pyprop.serialization import RemoveExistingDataset
-import helium
 from helium.namecontroller import namegenerator as NameGen
 from helium.utils import RegisterAll, GetFunctionLogger
-
-MODULE_NAME = __name__
 
 @RegisterAll
 def FindEigenvaluesInverseIterationsPiram(conf):
@@ -69,7 +66,7 @@ def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
 	Saves the output of FindEigenvaluesNearShift, including error estimates 
 	to a hdf file.
 	"""
-	#logger = logging.getLogger("%s.%s" % (MODULE_NAME, __name__))
+	
 	logger = GetFunctionLogger()
 
 	conf = solver.BaseProblem.Config
@@ -78,7 +75,7 @@ def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
 	shift = conf.Arpack.shift
 
 	#generate filename
-	filename = NameGen.GetBoundstatesFilename(conf, L[0])
+	filename = NameGen.GetBoundstateFilename(conf, L[0])
 
 	#Get eigenvalue error estimates
 	errorEstimatesPIRAM = solver.Solver.GetErrorEstimates()

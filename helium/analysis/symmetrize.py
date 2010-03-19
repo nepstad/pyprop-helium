@@ -1,3 +1,6 @@
+import pyprop
+from indextricks import GetCoupledIndexList
+from libheliumanalysis import GetWavefunctionParticleExchange
 
 def GetSymmetrizationIndexPairs(psi):
 	"""
@@ -11,7 +14,7 @@ def GetSymmetrizationIndexPairs(psi):
 	"""
 	angularRank = 0
 
-	coupledIndexList = GetCoupledIndexList(psi)
+	coupledIndexList = GetCoupledIndexList(psi, angularRank)
 	nL = len(coupledIndexList)
 	
 	#construct all possible pairs
@@ -32,7 +35,7 @@ def GetSymmetrizedWavefunction(psi):
 	Returns a tuple of the symmetrized and anti-symmetrized wavefunction 
 	(symPsi, antiSymPsi)
 	"""
-	AssertSingleProc()
+	pyprop.AssertSingleProc()
 
 	sym = GetSymmetrizationIndexPairs(psi)
 	exchgPsi = GetWavefunctionParticleExchange(psi, sym)
@@ -49,7 +52,10 @@ def GetSymmetrizedWavefunction(psi):
 	return symPsi, antiSymPsi
 
 def SymmetrizeWavefunction(psi, symmetrize):
-	AssertSingleProc()
+	"""
+	Perform in-place symmetrization of wavefunction <psi>
+	"""
+	pyprop.AssertSingleProc()
 
 	if symmetrize:
 		symfactor = 1

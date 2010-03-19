@@ -1,0 +1,8 @@
+SUBDIRS := core analysis
+
+all:
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) all); done 
+
+clean:
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) $@); done 
+

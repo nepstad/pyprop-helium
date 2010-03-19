@@ -13,7 +13,7 @@ Provides:
 """
 
 from ..utils import RegisterAll, RegisterProjectNamespace
-from numpy import unique
+from numpy import unique, diff
 
 @RegisterAll
 def GetProjectPostfix(conf):

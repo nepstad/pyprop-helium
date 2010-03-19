@@ -16,7 +16,7 @@ from ..utils import RegisterAll, RegisterProjectNamespace
 
 from pyprop import Config
 from pyprop.utilities import IntensitySIFromElectricFieldAtomic
-from numpy import unique, int32, array
+from numpy import unique
 import os
 
 
@@ -71,7 +71,7 @@ def GetAllBoundstateFilenames(conf):
 	Llist = unique([L for l1, l2, L, M in conf.AngularRepresentation.index_iterator])
 
 	#Construct file list
-	fileList = [GetBoundstatesFilename(conf, L=int(L)) for L in Llist]
+	fileList = [GetBoundstateFilename(conf, L=int(L)) for L in Llist]
 
 	#Filter out non-existing files
 	filteredFileList = filter(os.path.exists, fileList)

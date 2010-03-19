@@ -38,6 +38,9 @@ class Propagate:
 		for t in self.Problem.Advance(self.NumberOfCallbacks):
 			for task in self.PropagationTasks:
 				task.callback(self.Problem)
+		
+		#run postprocessing
+		self.postProcess()
 
 	
 	def postProcess(self):

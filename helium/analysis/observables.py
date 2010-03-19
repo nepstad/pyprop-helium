@@ -6,8 +6,7 @@ Extract 'observables' from wavefunction: expectation values,
 integrated/differential probabilities, etc.
 
 """
-import logging
-from numpy import real, linspace, meshgrid, outer, diff, zeros, double
+from numpy import real, linspace, outer, diff, zeros, double
 from numpy import abs as nabs
 from scipy.interpolate import RectBivariateSpline
 from helium.utils import RegisterAll, GetClassLogger
@@ -80,7 +79,7 @@ class DoubleContinuumObservables(object):
 
 		#Step 2: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
-		ionThreshold = -2.1
+		ionThreshold = -2.0
 		self.BoundstateProjector.RemoveProjection(self.Psi, ionThreshold)
 		self.TotalIonizationProbability = self.Psi.InnerProduct(self.Psi).real
 		

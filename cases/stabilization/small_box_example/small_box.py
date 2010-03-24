@@ -3,13 +3,12 @@ import logging
 
 sys.path.append("..")
 import stabilization
-
 import helium.propagation.tasks as Tasks
 from helium.eigenvalues.eigenvalues import FindEigenvaluesInverseIterationsPiram
 from helium.eigenvalues.eigenvalues import SaveEigenvalueSolverShiftInvert
 from helium.propagation.propagate import Propagate
 from helium.eigenvalues.eigenstates import LoadBoundstateIndex
-from helium.analysis.observables import DoubleContinuumObservables
+from helium.analysis.observables import ContinuumObservables, DoubleContinuumObservables
 import pyprop
 
 #set logging level
@@ -81,8 +80,31 @@ def TestPropagationSmallBox():
 	
 	return prop
 
-
 def CalculateIonization(conf):
+	"""
+	Calculates total ionization probability for a wavefunction, defined
+	by the Pyprop config object 'conf'
+	
+	Returns a 'ContinuumObservable' instance.
+	"""
+	#Setup/load wavefunction
+	logging.info("Loading wavefunction...")
+	with pyprop.EnableRedirect():
+		psiFileName = conf.Names.output_file_name
+		psi = pyprop.CreateWavefunctionFromFile(psiFileName)
+
+	#Observables
+	logging.info("Calculating observables...")
+	observables = ContinuumObservables(psi, conf)
+	observables.Setup()
+
+	logging.info("    Total ionization = %s" % observables.GetIonizationProbability())
+	logging.info("    Absorbed = %s" % observables.AbsorbedProbability)
+	
+	return observables
+		
+
+def CalculateDoubleIonization(conf):
 	"""
 	Calculates total-, single- and double ionization probabilities for
 	a propagated wavefunction, defined by the Pyprop config object 'conf'.
@@ -91,7 +113,7 @@ def CalculateIonization(conf):
 	"""
 
 	#Setup/load wavefunction
-	logging.info("Load wavefunction...")
+	logging.info("Loading wavefunction...")
 	with pyprop.EnableRedirect():
 		psiFileName = conf.Names.output_file_name
 		psi = pyprop.CreateWavefunctionFromFile(psiFileName)

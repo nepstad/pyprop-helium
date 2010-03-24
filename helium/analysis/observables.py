@@ -6,16 +6,81 @@ Extract 'observables' from wavefunction: expectation values,
 integrated/differential probabilities, etc.
 
 """
+import copy
 from numpy import real, linspace, outer, diff, zeros, double
 from numpy import abs as nabs
 from scipy.interpolate import RectBivariateSpline
+import pyprop
 from helium.utils import RegisterAll, GetClassLogger
 from helium.analysis.projectors import EigenstateProjector
 from helium.analysis.projectors import ProductStateProjector 
 
 @RegisterAll
+class ContinuumObservables(object):
+	"""
+	Observables involving the total helium continuum, that is, all states
+	with energies above -2.0 a.u. It is defined through the complement of
+	the bound state projector, P_cont = I - P_bound
+
+	Implements
+	----------
+	"""
+	def __init__(self, psi, conf, ionThreshold = -2.0):
+		"""Return a helium continuum observables object
+
+		Input
+		-----
+		psi: a pyprop wavefunction
+		conf: a pyprop config
+		ionThreshold: (double) ionization energy threshold 
+
+		"""
+		self.Psi = psi
+		self.Config = copy.copy(conf)
+		self.IonThreshold = ionThreshold
+		
+		#get logger
+		self.Logger = GetClassLogger(self)
+
+		#setup bound state projector
+		self.Logger.info("Setting up bound state projector...")
+		self.BoundstateProjector = EigenstateProjector(conf)
+		
+		#keep ionization data
+		self.InitialProbability = -1
+		self.AbsorbedProbability = -1
+		self.IonizationProbability = -1
+		
+		
+	def Setup(self):
+		"""
+		"""
+		#Step 1: get initial norm
+		initPsi = pyprop.CreateWavefunction(self.Config)
+		initPsi.Clear()
+		self.Config.InitialCondition.function(initPsi, self.Config.InitialCondition)
+		self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		
+		#Step 2: calculate absorption
+		self.AbsorbedProbability = self.InitialProbability - real(self.Psi.InnerProduct(self.Psi))
+
+		#Step 3: remove projection onto bound states
+		self.Logger.info("Removing bound states projection...")
+		self.BoundstateProjector.RemoveProjection(self.Psi, self.IonThreshold)
+		self.IonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
+		
+		
+	def GetIonizationProbability(self):
+		"""Return ionization probability (double)
+		"""
+		return self.IonizationProbability 
+	
+	
+@RegisterAll
 class SingleParticleObservables(object):
-	pass
+	def __init__(self):
+		raise NotImplementedError("Not implemented yet!")
+
 
 @RegisterAll
 class DoubleContinuumObservables(object):
@@ -158,7 +223,7 @@ class DoubleContinuumObservables(object):
 
 
 	def GetAngularDistributionCoplanar(self):
-		pass
+		raise NotImplementedError("Not implemented yet!")
 
 
 @RegisterAll
@@ -167,5 +232,6 @@ class DoubleContinuumPlaneWaveObservables(DoubleContinuumObservables):
 	Similar to DoubleContinuumObservables, but the continuum is now defined	by
 	a product of plane waves.
 	"""
-	pass
+	def __init__(self):
+		raise NotImplementedError("Not implemented yet!")
 

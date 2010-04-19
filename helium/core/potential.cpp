@@ -101,7 +101,7 @@ public:
 	void ApplyConfigSection(const ConfigSection &config)
 	{
 		config.Get("radial_rank_1", radialRank1);
-		config.Get("radial_rank_1", radialRank2);
+		config.Get("radial_rank_2", radialRank2);
 		config.Get("absorber_start", absorberStart);
 		config.Get("absorber_length", absorberLength);
 		config.Get("scaling_real", scalingReal);

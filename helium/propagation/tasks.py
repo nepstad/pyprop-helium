@@ -9,15 +9,18 @@ from __future__ import with_statement
 import os.path
 import time
 import tables
+import pypar
 import pyprop
 from pyprop import PrintOut
 from helium.utils import RegisterAll, GetClassLogger
 
 
 def CreatePath(absFileName):
-	filePath = os.path.dirname(absFileName)
-	if not os.path.exists(filePath):
-		os.makedirs(filePath)
+	if pyprop.ProcId == 0:
+		filePath = os.path.dirname(absFileName)
+		if not os.path.exists(filePath):
+			os.makedirs(filePath)
+	pypar.barrier()
 	
 
 class PropagationTask:
@@ -55,7 +58,7 @@ class ProgressReport(PropagationTask):
 		self.StartTime = time.time()
 		self.InitialPsi = prop.psi.Copy()
 		self.OutputFileName = prop.Config.Names.output_file_name
-
+	
 		#check if output dir exist, create if not
 		CreatePath(self.OutputFileName)
 
@@ -131,8 +134,10 @@ class SaveWavefunction(PropagationTask):
 			
 			#store current wavefunction and propagation time
 			prop.SaveWavefunctionHDF(filename, "/wavefunction")
-			with tables.openFile(filename, "r+") as h5:
-				h5.setNodeAttr("/wavefunction", "prop_time", prop.PropagatedTime)
+			if pyprop.ProcId == 0:
+				with tables.openFile(filename, "r+") as h5:
+					h5.setNodeAttr("/wavefunction", "prop_time", prop.PropagatedTime)
+			pypar.barrier()
 
 			self.Counter += 1
 

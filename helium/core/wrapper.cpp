@@ -12,7 +12,8 @@ using namespace boost::python;
 // Module ======================================================================
 void Export_wrapper()
 {
-    class_< DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>, boost::noncopyable >("KineticEnergyPotential_3", init<  >())
+    class_< DynamicPotentialEvaluator<KineticEnergyPotential<3>,3> >("KineticEnergyPotential_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>::MultiplyPotential)
@@ -22,7 +23,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<KineticEnergyPotential<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>, boost::noncopyable >("CoupledSphericalCoulombPotential_3", init<  >())
+    class_< DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3> >("CoupledSphericalCoulombPotential_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>::MultiplyPotential)
@@ -32,7 +34,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<CoupledSphericalCoulombPotential<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>, boost::noncopyable >("ComplexAbsorbingPotential_3", init<  >())
+    class_< DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3> >("ComplexAbsorbingPotential_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>::MultiplyPotential)
@@ -42,7 +45,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<OverlapPotential<3>,3>, boost::noncopyable >("OverlapPotential_3", init<  >())
+    class_< DynamicPotentialEvaluator<OverlapPotential<3>,3> >("OverlapPotential_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<OverlapPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<OverlapPotential<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<OverlapPotential<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<OverlapPotential<3>,3>::MultiplyPotential)
@@ -52,7 +56,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<OverlapPotential<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<BoxNormPotential<3>,3>, boost::noncopyable >("BoxNormPotential_3", init<  >())
+    class_< DynamicPotentialEvaluator<BoxNormPotential<3>,3> >("BoxNormPotential_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<BoxNormPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<BoxNormPotential<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<BoxNormPotential<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<BoxNormPotential<3>,3>::MultiplyPotential)
@@ -62,7 +67,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<BoxNormPotential<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<SingleIonizationBox<3>,3>, boost::noncopyable >("SingleIonizationBox_3", init<  >())
+    class_< DynamicPotentialEvaluator<SingleIonizationBox<3>,3> >("SingleIonizationBox_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<SingleIonizationBox<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<SingleIonizationBox<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<SingleIonizationBox<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<SingleIonizationBox<3>,3>::MultiplyPotential)
@@ -72,7 +78,8 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<SingleIonizationBox<3>,3>::CalculateExpectationValue)
     ;
 
-    class_< DynamicPotentialEvaluator<DoubleIonizationBox<3>,3>, boost::noncopyable >("DoubleIonizationBox_3", init<  >())
+    class_< DynamicPotentialEvaluator<DoubleIonizationBox<3>,3> >("DoubleIonizationBox_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<DoubleIonizationBox<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<DoubleIonizationBox<3>,3>::ApplyConfigSection)
         .def("ApplyPotential", &DynamicPotentialEvaluator<DoubleIonizationBox<3>,3>::ApplyPotential)
         .def("MultiplyPotential", &DynamicPotentialEvaluator<DoubleIonizationBox<3>,3>::MultiplyPotential)

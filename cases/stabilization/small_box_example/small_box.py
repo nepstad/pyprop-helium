@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import sys
 import logging
 
@@ -78,7 +79,7 @@ def SetupTasks():
 	return tasks
 
 
-def PropagationExecutor(frequency = 5.0, E_0 = 1.0, cycles = 6, xsize = 60, xmax = 30.0, Ls= 3, lmax = 5):
+def PropagationExecutor(frequency = 5.0, E_0 = 1.0, cycles = 6, xsize = 60, xmax = 30.0, Ls= 3, lmax = 5, **args):
 	"""
 	Calculate the effect of a short, intense laser pulse on the Helium
 	ground state, by time propagation using the Cayley propagator.
@@ -86,15 +87,20 @@ def PropagationExecutor(frequency = 5.0, E_0 = 1.0, cycles = 6, xsize = 60, xmax
 	Uses the 'propagation.ini' config file.
 
 	Returns helium.propagate.Propagate object.
+
 	"""
-	
+
+	if propagationConfig in args:
+		propagationConfig = args['propagationConfig']
+	else : 
+		propagationConfig = 'propagation.ini'	
 
 	def UpdateConfig(conf):
 		
 		return pyprop.Config(conf.cfgObj)
 
 	#Load config
-	conf = pyprop.Load("propagation.ini")
+	conf = pyprop.Load(propagationConfig)
 
 	#Change config according to parametres
 	conf.SetValue("Names", "output_file_name", "data/omega_%.2f_E_%.2f_cyc_%i_size_%i/proper_propagation.h5"%(frequency,E_0,cycles,xsize))
@@ -131,7 +137,7 @@ def test(frequencies, E_0s, cycles, xsize,xmax, Ls, lmax):
 		print cycles, xsize, xmax
 		print Ls[1], lmax
 
-def ManyPropagations(frequencies, E_0s, cycles, xsize,xmax, Ls, lmax):
+def ManyPropagations(frequencies, E_0s, cycles, xsize,xmax, Ls, lmax,**args):
 	"""
 	Loops over PropegationSmallBox() for the freq. and E_0 given as parametres.
 
@@ -147,7 +153,7 @@ def ManyPropagations(frequencies, E_0s, cycles, xsize,xmax, Ls, lmax):
 		for E_0 in E_0s:
 			for cyc in cycles:
 				prop = PropagationExecutor(frequency = freq, E_0 = E_0, cycles = cyc, 
-						xsize = xsize, xmax = xmax, Ls= Ls, lmax = lmax)
+						xsize = xsize, xmax = xmax, Ls= Ls, lmax = lmax,**args)
 				del prop
 
 

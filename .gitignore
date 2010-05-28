@@ -6,3 +6,5 @@ pyprop
 *.pyc
 .deps*
 .*.swp
+*.a
+

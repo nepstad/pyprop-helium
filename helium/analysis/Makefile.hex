@@ -1,0 +1,64 @@
+#
+#change these as needed
+#
+PYPROP_ROOT  := ../../pyprop
+MODULENAME   := libheliumanalysis
+
+
+#
+#dont' change these
+#
+PYSTEFILES   := $(wildcard *.pyste)
+PYSTEOBJECTS := $(PYSTEFILES:.pyste=.cpp)
+SOURCEFILES  := $(PYSTEOBJECTS)
+OBJECTS      := $(PYSTEOBJECTS:.cpp=.o)
+STATICFILE   := ../$(MODULENAME).a
+LIBS         := $(LIBS) -lcore 
+
+include $(PYPROP_ROOT)/core/makefiles/Makefile.include
+include $(PYPROP_ROOT)/Makefile.platform
+
+INCLUDE      := $(INCLUDE) -I$(PYPROP_ROOT)/
+
+#Make static exec if PYPROP_STATIC is set to 1
+ifeq ($(PYPROP_STATIC),1)
+STATIC_DEP = $(STATICFILE)
+
+all: $(STATIC_DEP)
+
+$(MODULENAME): $(OBJECTS)
+	#rm -f $(MODULENAME)
+	$(LD) $(LD_SHARED) -o $(MODULENAME) $(OBJECTS) $(LIBS) -L$(PYPROP_LIB_PATH) $(call STATIC_LINK_DIR, ../) 
+
+$(STATICFILE): $(OBJECTS)
+	rm -f $(STATICFILE)
+	$(AR) cr $(STATICFILE) $(OBJECTS)
+
+wrapper.cpp: wrapper.pyste 
+	$(PYSTE) $(INCLUDE) --out=wrapper.cpp --module=$(MODULENAME) wrapper.pyste
+
+
+clean:
+	rm -rf .deps
+	mkdir .deps
+	rm -rf *.o
+	rm -rf $(MODULENAME).so
+	rm -rf $(STATICFILE)
+
+pyclean:
+	rm -rf $(PYSTEOBJECTS)
+
+#autodependencies
+DEPDIR        = .deps
+df            = $(DEPDIR)/$(*F)
+DEPENDENCIES  = $(addprefix $(DEPDIR)/, $(SOURCEFILES:%.cpp=%.P))
+
+-include $(DEPENDENCIES)
+
+SUPERLU_PATH = $(PYPROP_ROOT)/extern/superlu_serial
+SUPERLU_LIBS = -L$(SUPERLU_PATH)/lib -lsuperlu_serial
+SUPERLU_INCLUDE = -I$(SUPERLU_PATH)/SRC
+CPPFLAGS := $(CPPFLAGS) $(SUPERLU_INCLUDE)
+LAPACK_LIBS  := $(LAPACK_LIBS) $(SUPERLU_LIBS)
+
+endif

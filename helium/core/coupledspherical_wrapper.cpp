@@ -14,6 +14,9 @@ namespace  {
 
 struct CustomPotentialEvaluationR12_3_Wrapper: CustomPotentialEvaluationR12<3>
 {
+    CustomPotentialEvaluationR12_3_Wrapper(PyObject* py_self_, const CustomPotentialEvaluationR12<3>& p0):
+        CustomPotentialEvaluationR12<3>(p0), py_self(py_self_) {}
+
     CustomPotentialEvaluationR12_3_Wrapper(PyObject* py_self_):
         CustomPotentialEvaluationR12<3>(), py_self(py_self_) {}
 
@@ -54,6 +57,9 @@ struct CustomPotentialEvaluationR12_3_Wrapper: CustomPotentialEvaluationR12<3>
 
 struct CoupledSphericalKineticEnergyEvaluator_3_Wrapper: CoupledSphericalKineticEnergyEvaluator<3>
 {
+    CoupledSphericalKineticEnergyEvaluator_3_Wrapper(PyObject* py_self_, const CoupledSphericalKineticEnergyEvaluator<3>& p0):
+        CoupledSphericalKineticEnergyEvaluator<3>(p0), py_self(py_self_) {}
+
     CoupledSphericalKineticEnergyEvaluator_3_Wrapper(PyObject* py_self_):
         CoupledSphericalKineticEnergyEvaluator<3>(), py_self(py_self_) {}
 
@@ -99,7 +105,8 @@ struct CoupledSphericalKineticEnergyEvaluator_3_Wrapper: CoupledSphericalKinetic
 // Module ======================================================================
 void Export_coupledspherical_wrapper()
 {
-    class_< CustomPotentialEvaluationR12<3>, boost::noncopyable, CustomPotentialEvaluationR12_3_Wrapper >("CustomPotentialEvaluationR12_3", init<  >())
+    class_< CustomPotentialEvaluationR12<3>, CustomPotentialEvaluationR12_3_Wrapper >("CustomPotentialEvaluationR12_3", init<  >())
+        .def(init< const CustomPotentialEvaluationR12<3>& >())
         .def("UpdatePotentialData", (void (CustomPotentialEvaluationR12<3>::*)(blitz::Array<std::complex<double>,3>, boost::shared_ptr<Wavefunction<3> >, std::complex<double>, double) )&CustomPotentialEvaluationR12<3>::UpdatePotentialData, (void (CustomPotentialEvaluationR12_3_Wrapper::*)(blitz::Array<std::complex<double>,3>, boost::shared_ptr<Wavefunction<3> >, std::complex<double>, double))&CustomPotentialEvaluationR12_3_Wrapper::default_UpdatePotentialData)
         .def("ApplyConfigSection", (void (CustomPotentialCoupledSphericalBase<3>::*)(const ConfigSection&) )&CustomPotentialCoupledSphericalBase<3>::ApplyConfigSection, (void (CustomPotentialEvaluationR12_3_Wrapper::*)(const ConfigSection&))&CustomPotentialEvaluationR12_3_Wrapper::default_ApplyConfigSection)
         .def("SetBasisPairs", (void (CustomPotentialCoupledSphericalBase<3>::*)(int, const blitz::Array<int,2>&) )&CustomPotentialCoupledSphericalBase<3>::SetBasisPairs, (void (CustomPotentialEvaluationR12_3_Wrapper::*)(int, const blitz::Array<int,2>&))&CustomPotentialEvaluationR12_3_Wrapper::default_SetBasisPairs)
@@ -110,7 +117,8 @@ void Export_coupledspherical_wrapper()
         .staticmethod("CoefficientR12")
     ;
 
-    class_< CoupledSphericalKineticEnergyEvaluator<3>, boost::noncopyable, CoupledSphericalKineticEnergyEvaluator_3_Wrapper >("CoupledSphericalKineticEnergyEvaluator_3", init<  >())
+    class_< CoupledSphericalKineticEnergyEvaluator<3>, CoupledSphericalKineticEnergyEvaluator_3_Wrapper >("CoupledSphericalKineticEnergyEvaluator_3", init<  >())
+        .def(init< const CoupledSphericalKineticEnergyEvaluator<3>& >())
         .def_readwrite("Mass", &CoupledSphericalKineticEnergyEvaluator<3>::Mass)
         .def("ApplyConfigSection", (void (CoupledSphericalKineticEnergyEvaluator<3>::*)(const ConfigSection&) )&CoupledSphericalKineticEnergyEvaluator<3>::ApplyConfigSection, (void (CoupledSphericalKineticEnergyEvaluator_3_Wrapper::*)(const ConfigSection&))&CoupledSphericalKineticEnergyEvaluator_3_Wrapper::default_ApplyConfigSection)
         .def("UpdatePotentialData", (void (CoupledSphericalKineticEnergyEvaluator<3>::*)(blitz::Array<std::complex<double>,3>, boost::shared_ptr<Wavefunction<3> >, std::complex<double>, double) )&CoupledSphericalKineticEnergyEvaluator<3>::UpdatePotentialData, (void (CoupledSphericalKineticEnergyEvaluator_3_Wrapper::*)(blitz::Array<std::complex<double>,3>, boost::shared_ptr<Wavefunction<3> >, std::complex<double>, double))&CoupledSphericalKineticEnergyEvaluator_3_Wrapper::default_UpdatePotentialData)

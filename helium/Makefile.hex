@@ -1,0 +1,63 @@
+SUBDIRS := core analysis
+PYPROP_ROOT  := ../pyprop
+STATIC_EXEC = helium-exec
+MODULENAME   := libhelium
+
+SUBMODULES := libheliumanalysis libheliumcore
+SUBMODULELIBS := libheliumcore.a libheliumanalysis.a
+
+include $(PYPROP_ROOT)/core/makefiles/Makefile.include
+include $(PYPROP_ROOT)/Makefile.platform
+
+PYPROP_LIB_PATH := $(PYPROP_ROOT)/pyprop/core
+INCLUDE      := $(INCLUDE) -I$(PYPROP_ROOT)/
+
+PYSTEFILES   := $(wildcard core/*.pyste) $(wildcard analysis/*.pyste)
+PYSTEOBJECTS := $(PYSTEFILES:.pyste=.cpp)
+OBJECTS      := $(PYSTEOBJECTS:.cpp=.o) $(MODULENAME).o
+
+STATIC_MAIN_GENERATOR := $(PYPROP_ROOT)/core/utility/python_main.py
+PYPROP_CORE := $(PYPROP_ROOT)/core/lib/libcore.so
+PYPROP_CORE_STATIC := $(PYPROP_ROOT)/core/lib/libcore.a
+
+-include Makefile.extension
+
+SUPERLU_PATH = $(PYPROP_ROOT)/extern/superlu_serial
+SUPERLU_LIBS = -L$(SUPERLU_PATH)/lib -lsuperlu_serial
+SUPERLU_INCLUDE = -I$(SUPERLU_PATH)/SRC
+CPPFLAGS := $(CPPFLAGS) $(SUPERLU_INCLUDE)
+LAPACK_LIBS  := $(LAPACK_LIBS) $(SUPERLU_LIBS)
+
+#Make static exec if PYPROP_STATIC is set to 1
+ifeq ($(PYPROP_STATIC),1)
+STATIC_DEP = $(OUTPUT_STATIC) $(STATIC_EXEC)
+
+all:
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) -f Makefile.hex all); done 
+	$(MAKE) -f Makefile.hex core
+
+core: $(STATIC_DEP) $(DYNAMIC_DEP)
+
+#Generate the pyprop-exec file from its python file
+$(STATIC_EXEC).cpp: $(OUTPUT_STATIC)
+	python $(STATIC_MAIN_GENERATOR) $(STATIC_EXEC).cpp $(SUBMODULES)
+
+#Build the static python executable with all modules
+$(STATIC_EXEC): $(OUTPUT_STATIC) $(STATIC_EXEC).cpp $(STATIC_EXEC).o
+	rm -f $(STATIC_EXEC)
+	$(LD) $(LD_STATIC) -o $(STATIC_EXEC) $(STATIC_EXEC).o $(shell ls $(PYPROP_ROOT)/core/lib/lib*.a) $(SUBMODULELIBS) $(PYPROP_CORE_STATIC) $(LIBS) $(LDFLAGS) $(PYTHON_STATIC_LIBS) $(FORTRAN_LIBS)
+
+#Build the static library
+$(OUTPUT_STATIC): $(OBJECTS) 
+	rm -rf $(OUTPUT_STATIC)
+	#mkdir -p ./lib
+	$(AR) cr $(OUTPUT_STATIC) $(OBJECTS)
+
+clean:
+	rm -f *.a
+	rm $(STATIC_EXEC)
+	rm -rf .deps
+	mkdir .deps
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) -f Makefile.hex clean); done 
+
+endif

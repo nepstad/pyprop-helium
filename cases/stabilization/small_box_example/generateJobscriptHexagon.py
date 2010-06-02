@@ -70,7 +70,7 @@ def generateJobscript(pyTask,**args):
 
 	fileHandle.write('cd /work/' + userName + '/pyprop-helium/cases/stabilization/proper_calculations \n')
 	
-	mpirunString = 'aprun -n ' + str(TotalNumbProc) + ' -N ' + str(ProcPerNode) + ' python ' + pyTask + '\n'
+	mpirunString = 'aprun -n ' + str(TotalNumbProc) + ' -N ' + str(ProcPerNode) + pyTask + '\n'
 	fileHandle.write(mpirunString)	
 	
 	print "The file " + filename + " has been generated."
@@ -153,7 +153,7 @@ def generateJobscriptWithPropagationParams(**args):
 	argString = freq + ',' + E_0s + ',' + cyc + ',' + xsize + ',' + xmax + ',' + Ls + ',' + lmax
 
 	fileName = 'job_prop_' + str(JobCount) + '_'
-	task = '-c "execfile(\'small_box.py\'); ManyPropagations(' + argString + ')"'
+	task = ' ./helium-exec -c "execfile(\'small_box.py\'); ManyPropagations(' + argString + ')"'
 	
 	generateJobscript(pyTask=task, filename=fileName,**args)
 
@@ -218,7 +218,7 @@ def generateJobscriptWithGridParams(**args):
 	argString = xsize + ',' + xmax + ',' + order +',' + Ls + ',' + lmax
 
 	fileName = 'job_bound_' + str(JobCount) + '_'
-	task = '-c "execfile(\'SandSfunctions.py\'); FindBoundstatesAfterCheck(' + argString + ')"'
+	task = ' ./helium-exec -c "execfile(\'SandSfunctions.py\'); FindBoundstatesAfterCheck(' + argString + ')"'
 	
 	generateJobscript(pyTask=task, filename=fileName,**args)
 

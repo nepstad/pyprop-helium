@@ -103,8 +103,17 @@ class DisplayGMRESError(PropagationTask):
 	"""
 	Print GMRES solver error at each callback
 	"""
+	def __init__(self):
+		pass
+	
+	def setupTask(self, prop):
+		pass
+	
 	def callback(self, prop):
 		PrintOut(prop.Propagator.Solver.GetErrorEstimateList())
+		
+	def postProcess(self, prop):
+		pass
 
 
 class SaveWavefunction(PropagationTask):

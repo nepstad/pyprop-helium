@@ -1,5 +1,5 @@
 SUBDIRS := core analysis
-PYPROP_ROOT  := ../pyprop
+PYPROP_ROOT := ../pyprop
 STATIC_EXEC = helium-exec
 MODULENAME   := libhelium
 
@@ -33,8 +33,8 @@ ifeq ($(PYPROP_STATIC),1)
 STATIC_DEP = $(OUTPUT_STATIC) $(STATIC_EXEC)
 
 all:
-	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) -f Makefile.hex all); done 
-	$(MAKE) -f Makefile.hex core
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) all); done 
+	$(MAKE) core
 
 core: $(STATIC_DEP) $(DYNAMIC_DEP)
 
@@ -55,9 +55,9 @@ $(OUTPUT_STATIC): $(OBJECTS)
 
 clean:
 	rm -f *.a
-	rm $(STATIC_EXEC)
+	rm -f $(STATIC_EXEC)
 	rm -rf .deps
 	mkdir .deps
-	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) -f Makefile.hex clean); done 
+	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) -f Makefile clean); done 
 
 endif

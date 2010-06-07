@@ -1,8 +1,8 @@
-SUBDIRS := core analysis
+PYPROP_ROOT  := ../pyprop
+include $(PYPROP_ROOT)/Makefile.platform
 
-all:
-	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) all); done 
-
-clean:
-	for subdir in $(SUBDIRS); do (cd $${subdir}; $(MAKE) $@); done 
-
+ifeq ($(PYPROP_STATIC),1)
+	include Makefile.static
+else
+	include Makefile.dynamic
+endif

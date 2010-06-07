@@ -54,8 +54,10 @@ semiclean:
 clean: semiclean
 	rm -rf .deps
 	mkdir .deps
-	rm -rf $(PYSTEOBJECTS)
 	rm -rf $(MODULENAME).cpp
+
+pyclean: clean
+	rm -rf $(PYSTEOBJECTS)
 
 #autodependencies
 DEPDIR        = .deps

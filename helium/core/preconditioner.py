@@ -11,7 +11,7 @@ RadialTwoElectronPreconditionerIfpack
 from numpy import zeros, int, int32, complex, argsort
 import pyprop
 from pyprop.core import IfpackRadialPreconditioner_2
-from helium.core.libheliumcore import SuperLUSolver_2
+from .above import SuperLUSolver_2
 from helium.utils import RegisterAll, RegisterProjectNamespace
 
 def GetRadialMatricesCompressedCol(pot, psi):
@@ -150,7 +150,7 @@ class RadialTwoElectronPreconditioner:
 				raise Exception("Cannot consolidate potential %s with overlap-potential" % (potential.Name))
 		
 			#Add potential
-			potential.PotentialData *= scalingH
+			potential.PotentialData *= -scalingH
 			tensorPotential.PotentialData += potential.PotentialData
 			del potential
 		pyprop.PrintMemoryUsage("After Preconditioner Generate Potentials")
@@ -230,6 +230,8 @@ class RadialTwoElectronPreconditionerIfpack(RadialTwoElectronPreconditioner):
 	def ApplyConfigSection(self, conf):
 		RadialTwoElectronPreconditioner.ApplyConfigSection(self, conf)
 		self.Cutoff = conf.cutoff
+		self.DropTolerance = conf.drop_tolerance
+		self.PrecType = conf.preconditioner_type
 
 	def SetupRadialSolvers(self, tensorPotential):
 		pyprop.PrintMemoryUsage("Before Ifpack Setup")
@@ -244,6 +246,7 @@ class RadialTwoElectronPreconditionerIfpack(RadialTwoElectronPreconditioner):
 
 			solver = IfpackRadialPreconditioner_2()
 			basisPairs = tensorPotential.BasisPairs[1:]
+			#solver.Setup(vector, matrix, basisPairs, self.Cutoff, self.DropTolerance, self.PrecType)
 			solver.Setup(vector, matrix, basisPairs, self.Cutoff)
 			radialSolvers.append(solver)
 

@@ -10,6 +10,6 @@ Subpackage for performing various analysis tasks for Helium problems.
 
 """
 
-__all__ = ["libheliumanalysis", "singleparticle", "indextricks", "projectors", 
+__all__ = ["above", "singleparticle", "indextricks", "projectors", 
 		"observables"]
 

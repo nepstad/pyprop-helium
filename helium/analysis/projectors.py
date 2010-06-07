@@ -6,13 +6,13 @@ Calculates projection of wavefunction onto various set of states.
 
 """
 from numpy import array, int32
-from indextricks import GetLocalCoupledSphericalHarmonicIndices
-from helium.utils import RegisterAll
-from helium.configtools import Getlmax
-from helium.eigenvalues.eigenstates import Eigenstates
+from ..utils import RegisterAll
+from ..configtools import Getlmax
+from ..eigenvalues.eigenstates import Eigenstates
 from singleparticle import SingleParticleStates
-from libheliumanalysis import CalculatePopulationRadialProductStates
-from libheliumanalysis import CalculateProjectionRadialProductStates
+from ..core.above import CalculatePopulationRadialProductStates
+from ..core.above import CalculateProjectionRadialProductStates
+from .indextricks import GetLocalCoupledSphericalHarmonicIndices
 
 
 class Projector(object):

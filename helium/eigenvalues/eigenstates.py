@@ -4,9 +4,8 @@ eigenstates
 
 Basic eigenstate operations are provided. These are:
 
-	1)Generate file names
-	2)Load/store eigenstates from disk
-	3)Load (single-L) eigenstate into multi-L wavefunction
+	1)Load/store eigenstates from disk
+	2)Load (single-L) eigenstate into multi-L wavefunction
 
 
 """

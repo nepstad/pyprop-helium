@@ -11,10 +11,12 @@ Core functionality for Helium calculations, such potentials.
 
 #put boost::python-wrapped potentials into project namespace
 from helium.utils import ProjectNamespace, RegisterProjectNamespace
-import libheliumcore
-from libheliumcore import *
-for key in libheliumcore.__dict__.iterkeys():
+#import libheliumcore
+#from libheliumcore import *
+import above
+from above import *
+for key in above.__dict__.iterkeys():
 	if not key.startswith("__"):
 		RegisterProjectNamespace(eval(key))
 
-__all__ = ["libheliumcore", "preconditioner", "laserfunctions"]
+__all__ = ["above", "preconditioner", "laserfunctions"]

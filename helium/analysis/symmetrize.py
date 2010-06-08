@@ -1,6 +1,6 @@
 import pyprop
-from indextricks import GetCoupledIndexList
-from libheliumanalysis import GetWavefunctionParticleExchange
+from .indextricks import GetCoupledIndexList
+from .above import GetWavefunctionParticleExchange
 
 def GetSymmetrizationIndexPairs(psi):
 	"""

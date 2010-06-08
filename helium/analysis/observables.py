@@ -9,11 +9,17 @@ integrated/differential probabilities, etc.
 import copy
 from numpy import real, linspace, outer, diff, zeros, double
 from numpy import abs as nabs
-from scipy.interpolate import RectBivariateSpline
+
+#scipy not always available, workaround hack
+try:
+	from scipy.interpolate import RectBivariateSpline
+except:
+	RectBivariateSpline = None
+	
 import pyprop
-from helium.utils import RegisterAll, GetClassLogger
-from helium.analysis.projectors import EigenstateProjector
-from helium.analysis.projectors import ProductStateProjector 
+from ..utils import RegisterAll, GetClassLogger
+from .projectors import EigenstateProjector
+from .projectors import ProductStateProjector 
 
 @RegisterAll
 class ContinuumObservables(object):

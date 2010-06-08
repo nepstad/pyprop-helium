@@ -10,8 +10,8 @@ from ..utils import RegisterAll
 from ..configtools import Getlmax
 from ..eigenvalues.eigenstates import Eigenstates
 from singleparticle import SingleParticleStates
-from ..core.above import CalculatePopulationRadialProductStates
-from ..core.above import CalculateProjectionRadialProductStates
+from .above import CalculatePopulationRadialProductStates
+from .above import CalculateProjectionRadialProductStates
 from .indextricks import GetLocalCoupledSphericalHarmonicIndices
 
 

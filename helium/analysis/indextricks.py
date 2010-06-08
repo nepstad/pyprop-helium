@@ -3,10 +3,10 @@ IndexTricks
 ===========
 """
 
-from numpy import r_
-from ..utils import RegisterAll
 import sys
+from numpy import r_
 import pyprop
+from ..utils import RegisterAll
 
 
 @RegisterAll

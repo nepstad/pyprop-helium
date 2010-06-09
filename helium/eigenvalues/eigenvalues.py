@@ -11,8 +11,8 @@ import os
 import sys
 from numpy import where, array
 import tables
+import pypar
 import pyprop
-from pyprop import AnasaziSolver
 from pyprop.serialization import RemoveExistingDataset
 from helium.namecontroller import namegenerator as NameGen
 from helium.utils import RegisterAll, GetFunctionLogger
@@ -121,6 +121,9 @@ def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
 			myGroup._v_attrs.opCount = solver.Solver.GetOperatorCount()
 			myGroup._v_attrs.restartCount = solver.Solver.GetRestartCount()
 			myGroup._v_attrs.orthCount = solver.Solver.GetOrthogonalizationCount()
+		except:
+			logger.warning("Warning: could not store eigenvalues and error estimates!")
 		finally:
 			h5file.close()
 
+		pypar.barrier()

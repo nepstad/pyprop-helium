@@ -150,7 +150,7 @@ class RadialTwoElectronPreconditioner:
 				raise Exception("Cannot consolidate potential %s with overlap-potential" % (potential.Name))
 		
 			#Add potential
-			potential.PotentialData *= -scalingH
+			potential.PotentialData *= scalingH
 			tensorPotential.PotentialData += potential.PotentialData
 			del potential
 		pyprop.PrintMemoryUsage("After Preconditioner Generate Potentials")
@@ -232,10 +232,13 @@ class RadialTwoElectronPreconditionerIfpack(RadialTwoElectronPreconditioner):
 		self.Cutoff = conf.cutoff
 		self.DropTolerance = conf.drop_tolerance
 		self.PrecType = conf.preconditioner_type
+		
+	def GetHamiltonianScaling(self):
+		return -self.HamiltonianScaling
 
 	def SetupRadialSolvers(self, tensorPotential):
 		pyprop.PrintMemoryUsage("Before Ifpack Setup")
-
+		
 		#Setup the ILU preconditioner for each radial rank
 		radialSolvers = []
 		matrixCount = tensorPotential.PotentialData.shape[0]

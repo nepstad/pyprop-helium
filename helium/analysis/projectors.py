@@ -5,11 +5,11 @@ projectors
 Calculates projection of wavefunction onto various set of states.
 
 """
-from numpy import array, int32
+from numpy import array, int32, unique, s_
 from ..utils import RegisterAll
 from ..configtools import Getlmax
 from ..eigenvalues.eigenstates import Eigenstates
-from singleparticle import SingleParticleStates
+from .singleparticle import SingleParticleStates
 from .above import CalculatePopulationRadialProductStates
 from .above import CalculateProjectionRadialProductStates
 from .indextricks import GetLocalCoupledSphericalHarmonicIndices
@@ -63,33 +63,41 @@ class EigenstateProjector(Projector):
 		"""Remove bound part of psi in-place
 		"""
 		prevL = -1
+		angularRank = 0
+		angrepr = psi.GetRepresentation().GetRepresentation(angularRank)
+		psiRank = psi.GetRank()
 		
 		#work buffer wavefunction
 		projPsi = self.Eigenstates.GetBoundstates(0, ionThreshold)[0].Copy()
 		projPsi.Clear()
 
 		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(ionThreshold):
-			#Get the local indices corresponding to the local L
-			LFilter = lambda idx: idx.L == L
-			indexL = GetLocalCoupledSphericalHarmonicIndices(psi, LFilter)
-		
-			#Copy the part of psi corresponding to the current L to a 
-			#single-L wavefunction to do projection.
-			if not L == prevL:
-				#check shape of workbuffer; create new if wrong
-				if projPsi.GetData().shape != boundPsi.GetData().shape:
-					projPsi = boundPsi.Copy()
-
-				projPsi.GetData()[:] = psi.GetData()[indexL, :, :]
-				prevL = L
-		
-			curProjList = []
-			#calculate projection
-			proj = projPsi.InnerProduct(boundPsi)
-			curProjList.append(proj)
-
-			#remove projection
-			psi.GetData()[indexL, :, :] -= proj * boundPsi.GetData()
+			#Find all Ms for this L
+			cpldIdx = angrepr.Range.GetCoupledIndex
+			Mlist = unique([cpldIdx(i).M for i in range(psi.GetData().shape[angularRank]) if cpldIdx(i).L == L])			
+			for M in Mlist:
+				#Get the local indices corresponding to the local L
+				LFilter = lambda idx: idx.L == L and idx.M == M
+				indexL = GetLocalCoupledSphericalHarmonicIndices(psi, LFilter)
+				angSlice = [s_[:]]*(angularRank) + [indexL] + [s_[:]]*(psiRank-(angularRank+1))
+			
+				#Copy the part of psi corresponding to the current L to a 
+				#single-L wavefunction to do projection.
+				if not L == prevL:
+					#check shape of workbuffer; create new if wrong
+					if projPsi.GetData().shape != boundPsi.GetData().shape:
+						projPsi = boundPsi.Copy()
+	
+					projPsi.GetData()[:] = psi.GetData()[angSlice]
+					prevL = L
+			
+				curProjList = []
+				#calculate projection
+				proj = projPsi.InnerProduct(boundPsi)
+				curProjList.append(proj)
+	
+				#remove projection
+				psi.GetData()[angSlice] -= proj * boundPsi.GetData()
 		
 
 @RegisterAll

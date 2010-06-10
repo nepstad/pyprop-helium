@@ -22,7 +22,7 @@ import os
 
 @RegisterProjectNamespace
 @RegisterAll
-def GetBoundstateFilename(conf, L):
+def GetBoundstateFilename(conf, L, M=0):
 	"""Return filename of some angular momentum bound states.
 
 	Generate the name of a file where bound states associated with a given
@@ -39,6 +39,7 @@ def GetBoundstateFilename(conf, L):
 
 	localConf = Config(conf.cfgObj)
 	localConf.AngularRepresentation.index_iterator.L = [L]
+	localConf.AngularRepresentation.index_iterator.M = [M]
 
 	#Get custom postfix for filename, if specified
 	customPostfix = ""

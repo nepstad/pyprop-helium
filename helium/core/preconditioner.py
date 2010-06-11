@@ -159,6 +159,7 @@ class RadialTwoElectronPreconditioner:
 		#Setup solvers
 		tensorPotential.SetupStep(0.0)
 		self.SetupRadialSolvers(tensorPotential)
+		
 
 	def SetupRadialSolvers(self, tensorPotential):
 		raise NotImplementedError("Please Override")
@@ -233,9 +234,6 @@ class RadialTwoElectronPreconditionerIfpack(RadialTwoElectronPreconditioner):
 		self.DropTolerance = conf.drop_tolerance
 		self.PrecType = conf.preconditioner_type
 		
-	def GetHamiltonianScaling(self):
-		return -self.HamiltonianScaling
-
 	def SetupRadialSolvers(self, tensorPotential):
 		pyprop.PrintMemoryUsage("Before Ifpack Setup")
 		

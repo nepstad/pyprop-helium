@@ -53,16 +53,17 @@ class EigenstateProjector(Projector):
 
 
 	def ProjectOnto(self, psi):
-		pass
+		raise NotImplementedError("Not implemented yet")
 
 	def ProjectOntoComplement(self, psi):
-		pass
+		raise NotImplementedError("Not implemented yet")
 
 	
 	def RemoveProjection(self, psi, ionThreshold):
 		"""Remove bound part of psi in-place
 		"""
 		prevL = -1
+		prevM = -1
 		angularRank = 0
 		angrepr = psi.GetRepresentation().GetRepresentation(angularRank)
 		psiRank = psi.GetRank()
@@ -83,13 +84,14 @@ class EigenstateProjector(Projector):
 			
 				#Copy the part of psi corresponding to the current L to a 
 				#single-L wavefunction to do projection.
-				if not L == prevL:
+				if not (L == prevL and M == prevM):
 					#check shape of workbuffer; create new if wrong
 					if projPsi.GetData().shape != boundPsi.GetData().shape:
 						projPsi = boundPsi.Copy()
 	
 					projPsi.GetData()[:] = psi.GetData()[angSlice]
 					prevL = L
+					prevM = M
 			
 				curProjList = []
 				#calculate projection

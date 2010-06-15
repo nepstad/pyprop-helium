@@ -12,13 +12,18 @@ Getting started
 1) Create symlink to Pyprop location
 
 	ln -s /path/to/pyprop pyprop
-
-2) Compile all the Helium C++ libraries
+	
+2) Configure makefiles for local environment
 	
 	cd helium
+	cp Makefile.platform.example Makefile.platform
+	Edit Makefile.platform, change it to reflect your local environment. 
+
+3) Compile all the Helium C++ libraries
+	
 	make
 	
-3) Create a package configuration
+4) Create a package configuration
 	
 	cp siteconfig-example.py siteconfig.py
 	edit siteconfig.py
@@ -26,14 +31,13 @@ Getting started
 	The file locations in siteconfig.py are used to fetch/store bound states and single 
 	particle data, and should be set accordingly.
 
-For examples of use of the Helium package, take a look in the cases/ subfolder.
+For examples of use of the Helium package, take a look in the example/ subfolder.
 	
  
 Package structure
 -----------------
-cases/                      Case-specific code and examples
-	stabilization/
-	tpdi/                       Two-photon double ionization             
+doc/                            Documentation
+example/                        A few simple examples (in progress)
 helium/                         
 	__init__.py
 	siteconfig-example.py

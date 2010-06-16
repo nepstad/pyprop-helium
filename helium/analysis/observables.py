@@ -88,15 +88,13 @@ class SingleParticleObservables(object):
 		raise NotImplementedError("Not implemented yet!")
 
 
-@RegisterAll
 class DoubleContinuumObservables(object):
 	"""
-	Observables involving the double continuum, which is defined by a 
-	product of He+ single-particle states.
+	Observables involving the double continuum.
 
 	Idea: buffer projections onto radial states
 
-	Def. of double continuum: he+ / he+
+	Def. of double continuum should be implemented in deriving classes.
 
 	Implements
 	----------
@@ -124,8 +122,7 @@ class DoubleContinuumObservables(object):
 		self.Logger.info("Setting up product state projector...")
 		self.IsIonizedFilter = lambda E: 0.0 < E
 		ionF = self.IsIonizedFilter
-		self.DoubleContinuumProjector = \
-				ProductStateProjector(conf, "he+", "he+", ionF, ionF)
+		self.DoubleContinuumProjector = self.__SetupDCProjector()
 
 		#explicitly orthogonalize on these spaces
 		self.OtherProjectors = otherP
@@ -140,8 +137,9 @@ class DoubleContinuumObservables(object):
 
 		self.RadialProjections = None
 
-
-	
+	def __SetupDCProjector(self):
+		raise NotImplementedException("Please implement in derived class which specifies double continuum projectors to use.")
+			
 	def Setup(self):
 		"""
 		"""
@@ -231,6 +229,28 @@ class DoubleContinuumObservables(object):
 	def GetAngularDistributionCoplanar(self):
 		raise NotImplementedError("Not implemented yet!")
 
+
+@RegisterAll
+class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
+	"""
+	Observables involving the double continuum, which is defined by a 
+	product of He+ continuum states.
+
+	"""
+	def __SetupDCProjector(self):
+		return ProductStateProjector(conf, "he+", "he+", ionF, ionF)
+	
+
+@RegisterAll
+class DoubleContinuumObservablesCoulomb17(DoubleContinuumObservables):
+	"""
+	Observables involving the double continuum, which is defined by a 
+	product of Z=1.7 Coulomb waves.
+
+	"""
+	def __SetupDCProjector(self):
+		return ProductStateProjector(conf, "C17", "C17", ionF, ionF)
+		
 
 @RegisterAll
 class DoubleContinuumPlaneWaveObservables(DoubleContinuumObservables):

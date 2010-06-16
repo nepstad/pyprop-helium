@@ -1,0 +1,4 @@
+#Path to SuperLU library and headers
+SUPERLU_PATH = $(PYPROP_ROOT)/extern/superlu_serial
+SUPERLU_LIBS = -L$(SUPERLU_PATH)/lib -lsuperlu_serial
+SUPERLU_INCLUDE = -I/usr/include/superlu

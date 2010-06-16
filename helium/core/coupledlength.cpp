@@ -15,6 +15,14 @@ public:
 	CustomPotential_LaserLength() {}
 	virtual ~CustomPotential_LaserLength() {}
 
+	cplx Scaling;
+
+	virtual void ApplyConfigSection(const ConfigSection &config)
+	{
+		CustomPotentialCoupledSphericalBase<Rank>::ApplyConfigSection(config);
+		config.Get("scaling", Scaling);
+	}
+
 	virtual void UpdatePotentialData(typename blitz::Array<cplx, Rank> data, typename Wavefunction<Rank>::Ptr psi, cplx timeStep, double curTime)
 	{
 
@@ -108,6 +116,9 @@ public:
 				}
 			}
 		}
+
+		//Scale factor from config
+		data *= Scaling;
 	}
 
 	static double Coefficient(int l, int lp)
@@ -130,6 +141,14 @@ public:
 public:
 	CustomPotential_LaserLength_X() {}
 	virtual ~CustomPotential_LaserLength_X() {}
+
+	cplx Scaling;
+
+	virtual void ApplyConfigSection(const ConfigSection &config)
+	{
+		CustomPotentialCoupledSphericalBase<Rank>::ApplyConfigSection(config);
+		config.Get("scaling", Scaling);
+	}
 
 	virtual void UpdatePotentialData(typename blitz::Array<cplx, Rank> data, typename Wavefunction<Rank>::Ptr psi, cplx timeStep, double curTime)
 	{
@@ -230,6 +249,9 @@ public:
 				}
 			}
 		}
+
+		//Scale factor from config
+		data *= Scaling;
 	}
 
 	static double Coefficient(int l, int lp)

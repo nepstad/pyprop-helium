@@ -241,14 +241,14 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	
 
 @RegisterAll
-class DoubleContinuumObservablesCoulomb17(DoubleContinuumObservables):
+class DoubleContinuumObservablesCoulomb175(DoubleContinuumObservables):
 	"""
 	Observables involving the double continuum, which is defined by a 
-	product of Z=1.7 Coulomb waves.
+	product of Z=1.75 Coulomb waves.
 
 	"""
 	def _SetupDCProjector(self, conf):
-		return ProductStateProjector(conf, "c17", "c17", self.IsIonizedFilter, self.IsIonizedFilter)
+		return ProductStateProjector(conf, "c175", "c175", self.IsIonizedFilter, self.IsIonizedFilter)
 		
 
 @RegisterAll

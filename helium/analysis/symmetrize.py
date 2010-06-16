@@ -35,7 +35,7 @@ def GetSymmetrizedWavefunction(psi):
 	Returns a tuple of the symmetrized and anti-symmetrized wavefunction 
 	(symPsi, antiSymPsi)
 	"""
-	pyprop.AssertSingleProc()
+	assert (pyprop.ProcCount == 1)
 
 	sym = GetSymmetrizationIndexPairs(psi)
 	exchgPsi = GetWavefunctionParticleExchange(psi, sym)

@@ -121,8 +121,7 @@ class DoubleContinuumObservables(object):
 		#setup product state projector
 		self.Logger.info("Setting up product state projector...")
 		self.IsIonizedFilter = lambda E: 0.0 < E
-		ionF = self.IsIonizedFilter
-		self.DoubleContinuumProjector = self.__SetupDCProjector()
+		self.DoubleContinuumProjector = self._SetupDCProjector(conf)
 
 		#explicitly orthogonalize on these spaces
 		self.OtherProjectors = otherP
@@ -137,8 +136,8 @@ class DoubleContinuumObservables(object):
 
 		self.RadialProjections = None
 
-	def __SetupDCProjector(self):
-		raise NotImplementedException("Please implement in derived class which specifies double continuum projectors to use.")
+	def _SetupDCProjector(self, conf):
+		raise NotImplementedError("Please implement in derived class which specifies double continuum projectors to use.")
 			
 	def Setup(self):
 		"""
@@ -237,8 +236,8 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	product of He+ continuum states.
 
 	"""
-	def __SetupDCProjector(self):
-		return ProductStateProjector(conf, "he+", "he+", ionF, ionF)
+	def _SetupDCProjector(self, conf):
+		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, self.IsIonizedFilter)
 	
 
 @RegisterAll
@@ -248,8 +247,8 @@ class DoubleContinuumObservablesCoulomb17(DoubleContinuumObservables):
 	product of Z=1.7 Coulomb waves.
 
 	"""
-	def __SetupDCProjector(self):
-		return ProductStateProjector(conf, "C17", "C17", ionF, ionF)
+	def _SetupDCProjector(self, conf):
+		return ProductStateProjector(conf, "c17", "c17", self.IsIonizedFilter, self.IsIonizedFilter)
 		
 
 @RegisterAll

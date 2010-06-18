@@ -3,6 +3,7 @@ configtools
 ===========
 
 """
+import logging
 from numpy import max, array
 from utils import RegisterAll
 import pyprop
@@ -73,7 +74,7 @@ def UpdateConfig(conf, updateParams):
 	Note: Section references (i.e. through 'base') will be updated as well.
 
 	"""
-	tmpConf = pyprop.Config(conf)
+	tmpConf = pyprop.Config(conf.cfgObj)
 	
 	#Update config
 	for section, param, val in updateParams:

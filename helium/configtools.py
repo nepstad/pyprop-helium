@@ -5,6 +5,7 @@ configtools
 """
 from numpy import max, array
 from utils import RegisterAll
+import pyprop
 
 
 @RegisterAll

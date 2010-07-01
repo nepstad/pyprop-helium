@@ -74,3 +74,17 @@ def GetAngularPostfix(conf):
 
 	return postfix
 
+
+def GetPropagationPostfix(conf):
+	"""
+	Returns a "unique" list of strings identifying the propagation parameters
+	implied by the specified PyProp config, 'conf'.
+	"""
+	cfg = conf.Propagation
+
+	postfix = [
+		"duration%s" % cfg.duration, 
+		"dt%s" % cfg.timestep]
+
+	return postfix
+

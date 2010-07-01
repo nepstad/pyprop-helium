@@ -5,7 +5,7 @@ configtools
 """
 import logging
 from numpy import max, array
-from utils import RegisterAll
+from utils import RegisterAll, GetFunctionLogger
 import pyprop
 
 
@@ -75,10 +75,11 @@ def UpdateConfig(conf, updateParams):
 
 	"""
 	tmpConf = pyprop.Config(conf.cfgObj)
+	logger = GetFunctionLogger()
 	
 	#Update config
 	for section, param, val in updateParams:
-		logging.info("Updating config: %s(%s): %s" % (section, param, val))
+		logger.info("Updating config: %s(%s): %s" % (section, param, val))
 		tmpConf.SetValue(section, param, val)
 
 	#Update config object from possible changed ConfigParser object

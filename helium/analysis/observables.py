@@ -111,6 +111,8 @@ class DoubleContinuumObservables(object):
 
 		"""
 		self.Psi = psi
+		self.Config = copy.copy(conf)
+
 		#get logger
 		self.Logger = GetClassLogger(self)
 

@@ -127,6 +127,7 @@ class DoubleContinuumObservables(object):
 		self.OtherProjectors = otherP
 		
 		#keep ionization data
+		self.InitialProbability = -1
 		self.AbsorbedProbability = -1
 		self.TotalIonizationProbability = -1
 		self.DoubleIonizationProbability = -1
@@ -142,20 +143,26 @@ class DoubleContinuumObservables(object):
 	def Setup(self):
 		"""
 		"""
-		#Step 1: calculate absorption
-		self.AbsorbedProbability = 1.0 - real(self.Psi.InnerProduct(self.Psi))
+		#Step 1: get initial norm
+		initPsi = pyprop.CreateWavefunction(self.Config)
+		initPsi.Clear()
+		self.Config.InitialCondition.function(initPsi, self.Config.InitialCondition)
+		self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		
+		#Step 2: calculate absorption
+		self.AbsorbedProbability = self.InitialProbability - real(self.Psi.InnerProduct(self.Psi))
 
-		#Step 2: remove projection onto bound states
+		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
 		ionThreshold = -2.0
 		self.BoundstateProjector.RemoveProjection(self.Psi, ionThreshold)
-		self.TotalIonizationProbability = self.Psi.InnerProduct(self.Psi).real
+		self.TotalIonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
 		
-		#Step 3: remove other projections
+		#Step 4: remove other projections
 		for P in self.OtherProjectors:
 			P.RemoveProjection(self.Psi)
 			
-		#Step 4: Calculate projections onto double continuum basis states
+		#Step 5: Calculate projections onto double continuum basis states
 		getRadStates = \
 				self.DoubleContinuumProjector.GetProjectionAllRadialStates
 		self.RadialProjections = getRadStates(self.Psi)

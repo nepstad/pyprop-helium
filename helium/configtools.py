@@ -79,6 +79,11 @@ def UpdateConfig(conf, updateParams):
 	
 	#Update config
 	for section, param, val in updateParams:
+		if not hasattr(tmpConf, section):
+			cfg = tmpConf.cfgObj
+			cfg._dict = dict
+			cfg.add_section(section)
+			tmpConf = pyprop.Config(cfg)
 		logger.info("Updating config: %s(%s): %s" % (section, param, val))
 		tmpConf.SetValue(section, param, val)
 

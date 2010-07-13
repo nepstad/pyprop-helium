@@ -7,7 +7,7 @@ integrated/differential probabilities, etc.
 
 """
 import copy
-from numpy import real, linspace, outer, diff, zeros, double
+from numpy import real, linspace, outer, diff, zeros, double, array, interp
 from numpy import abs as nabs
 
 #scipy not always available, workaround hack
@@ -21,6 +21,9 @@ from ..utils import RegisterAll, GetClassLogger
 from .projectors import EigenstateProjector
 from .projectors import ProductStateProjector 
 
+#------------------------------------------------------------------------------
+# Continuum observables 
+#------------------------------------------------------------------------------
 @RegisterAll
 class ContinuumObservables(object):
 	"""
@@ -87,14 +90,14 @@ class SingleParticleObservables(object):
 	def __init__(self):
 		raise NotImplementedError("Not implemented yet!")
 
-
-class DoubleContinuumObservables(object):
+#------------------------------------------------------------------------------
+# Product state observables 
+#------------------------------------------------------------------------------
+class ProductStateContinuumObservables(object):
 	"""
-	Observables involving the double continuum.
+	Observables involving the continuum spanned by one-electron product states.
 
-	Idea: buffer projections onto radial states
-
-	Def. of double continuum should be implemented in deriving classes.
+	Def. of continuum should be implemented in deriving classes.
 
 	Implements
 	----------
@@ -123,7 +126,8 @@ class DoubleContinuumObservables(object):
 		#setup product state projector
 		self.Logger.info("Setting up product state projector...")
 		self.IsIonizedFilter = lambda E: 0.0 < E
-		self.DoubleContinuumProjector = self._SetupDCProjector(conf)
+		self.IsBoundFilter = lambda E: not self.IsIonizedFilter(E)
+		self.ContinuumProjector = self._SetupProjector(conf)
 
 		#explicitly orthogonalize on these spaces
 		self.OtherProjectors = otherP
@@ -133,14 +137,15 @@ class DoubleContinuumObservables(object):
 		self.AbsorbedProbability = -1
 		self.TotalIonizationProbability = -1
 		self.DoubleIonizationProbability = -1
+		self.SingleIonizationProbability = -1
 
-		#whether double ionization has been calculated already
-		self.DoubleIonizationIsCalculated = False
+		#whether ionization has been calculated already
+		self.IonizationIsCalculated = False
 
 		self.RadialProjections = None
 
-	def _SetupDCProjector(self, conf):
-		raise NotImplementedError("Please implement in derived class which specifies double continuum projectors to use.")
+	def _SetupProjector(self, conf):
+		raise NotImplementedError("Please implement in derived class which specifies continuum projectors to use.")
 			
 	def Setup(self):
 		"""
@@ -148,8 +153,19 @@ class DoubleContinuumObservables(object):
 		#Step 1: get initial norm
 		initPsi = pyprop.CreateWavefunction(self.Config)
 		initPsi.Clear()
-		self.Config.InitialCondition.function(initPsi, self.Config.InitialCondition)
-		self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		initCond = self.Config.InitialCondition
+		self.InitialProbability = 1.0
+		if initCond.type == pyprop.InitialConditionType.Custom:
+			initCond.function(initPsi, initCond)
+			self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		elif initCond.type == pyprop.InitialConditionType.Function:
+			localGrid = [initPsi.GetRepresentation().GetLocalGrid(i) for i in range(initPsi.GetRank())]
+			initPsi.GetData()[:] = initCond.function(initCond, localGrid)
+			initPsi.Normalize()
+			self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		else:
+			self.Logger.warning("Cannot handle initial condition type: %s. Cannot calculate initial norm, ionization \
+			probability may be wrong." % initCond.type)
 		
 		#Step 2: calculate absorption
 		self.AbsorbedProbability = self.InitialProbability - real(self.Psi.InnerProduct(self.Psi))
@@ -165,21 +181,117 @@ class DoubleContinuumObservables(object):
 			P.RemoveProjection(self.Psi)
 			
 		#Step 5: Calculate projections onto double continuum basis states
-		getRadStates = \
-				self.DoubleContinuumProjector.GetProjectionAllRadialStates
+		getRadStates = self.ContinuumProjector.GetProjectionAllRadialStates
 		self.RadialProjections = getRadStates(self.Psi)
+		#self.RadialProjections = self.ContinuumProjector.GetPopulationProductStates(self.Psi)
 
+#------------------------------------------------------------------------------
+# Single continuum observables 
+#------------------------------------------------------------------------------
+class SingleContinuumObservables(ProductStateContinuumObservables):
+	"""
+	Observables involving the single continuum.
+
+
+	Implements
+	----------
+	"""
+
+	def _SetupProjector(self, conf):
+		return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, self.IsBoundFilter)
+			
+	def GetSingleIonizationProbability(self):
+		"""Calculate single ionization probability
+		"""
+		#check if ionization is already calculated, if so, 
+		#just use buffered value
+		if not self.IonizationIsCalculated:
+			#I = 2.0 * sum([sum([p for i1, i2, p in pop]) for l1, l2, pop in self.RadialProjections])
+			I = 2.0 * sum([(nabs(pop)**2).sum() for l1, l2, pop in self.RadialProjections])
+
+			self.SingleIonizationProbability = I
+			self.DoubleIonizationProbability = self.TotalIonizationProbability - I
+			self.IonizationIsCalculated = True
+
+		return self.SingleIonizationProbability
+
+
+	def GetEnergyDistribution(self, maxEnergy, numEnergyPoints):
+		"""Calculate single ionization energy distribution
+		"""
+
+		E = linspace(0, maxEnergy, numEnergyPoints)
+		dpde = zeros(len(E), dtype=double)
+
+		#to store single ionization prob before interpolation
+		singleIonProb = 0
+
+		#for every l-pair (lIon, lBound) we have a set of (iIon, iBound) states
+		#In order to create an approx to dp/de, we make an interpolation for 
+		#each l-shell and add incoherently to the dpde array
+		P = self.ContinuumProjector
+		for lIon, lBound, lPop in self.RadialProjections:
+			#number of states in this l-shell (matching energy filter)
+			nIon = P.SingleStatesLeft.GetNumberOfStates(lIon, self.IsIonizedFilter)
+			nBound = P.SingleStatesRight.GetNumberOfStates(lBound, self.IsBoundFilter)
+
+			#sum up angular momentum components
+			pop = 2.0 * (nabs(lPop)**2).sum(axis=0).reshape(nIon, nBound).transpose()
+
+			#add contribution to total double ionization prob.
+			singleIonProb += sum(pop.flatten())
+
+			
+			EIon = P.SingleStatesLeft.GetRadialEnergies(lIon, self.IsIonizedFilter)
+
+			#Iterate over all bound states for this l-combination
+			for iBound in range(nBound):
+				#scale states with 1/diff(EIon)
+				curPop = pop[iBound, :-1] / diff(EIon)
+				#interpolate over ionized populations, add to total dpde
+				dpde += interp(E, EIon[:-1], curPop)
+				
+		#Calculate single ionization probability to check interpolation
+		absErrIonProb = abs(singleIonProb - sum(dpde.flatten()) * diff(E)[0])
+		relErrIonProb = absErrIonProb/singleIonProb
+		self.Logger.debug("Integrated single ionization probability: %s" % singleIonProb)
+		if relErrIonProb > 0.01:
+			warnMsg = "Integrating dP/dE does not give correct single ionization probability"
+			self.Logger.warning("%s: relerr = %s, abserr = %s." % (warnMsg, relErrIonProb, absErrIonProb))
+		else :
+			self.Logger.debug("Difference in single ionization probability after interpolation: %s" % absErrIonProb)	
+	
+		return E, dpde
+
+
+	def GetAngularDistributionCoplanar(self):
+		raise NotImplementedError("Not implemented yet!")
+
+
+#------------------------------------------------------------------------------
+# Double continuum observables 
+#------------------------------------------------------------------------------
+class DoubleContinuumObservables(ProductStateContinuumObservables):
+	"""
+	Observables involving the double continuum.
+
+	Def. of double continuum should be implemented in deriving classes.
+
+	Implements
+	----------
+	"""
 
 	def GetDoubleIonizationProbability(self):
 		"""Calculate double ionization probability
 		"""
 		#check if double ionization is already calculated, if so, 
 		#just use buffered value
-		if not self.DoubleIonizationIsCalculated:
-			I = sum([(nabs(pop)**2).sum() for l1,l2,pop in \
-				self.RadialProjections])
+		if not self.IonizationIsCalculated:
+			I = sum([(nabs(pop)**2).sum() for l1,l2,pop in self.RadialProjections])
+			#I = sum([sum([p for i1,i2,p in pop]) for l1,l2,pop in self.RadialProjections])
 			self.DoubleIonizationProbability = I
-			self.DoubleIonizationIsCalculated = True
+			self.SingleIonizationProbability = self.TotalIonizationProbability - I
+			self.IonizationIsCalculated = True
 			
 		return self.DoubleIonizationProbability
 
@@ -238,6 +350,9 @@ class DoubleContinuumObservables(object):
 		raise NotImplementedError("Not implemented yet!")
 
 
+#
+# Implementations of specific double continua, such as i.e. He+ x He+ 
+#
 @RegisterAll
 class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	"""
@@ -245,7 +360,7 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	product of He+ continuum states.
 
 	"""
-	def _SetupDCProjector(self, conf):
+	def _SetupProjector(self, conf):
 		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, self.IsIonizedFilter)
 	
 
@@ -256,8 +371,21 @@ class DoubleContinuumObservablesCoulomb175(DoubleContinuumObservables):
 	product of Z=1.75 Coulomb waves.
 
 	"""
-	def _SetupDCProjector(self, conf):
+	def _SetupProjector(self, conf):
 		return ProductStateProjector(conf, "c175", "c175", self.IsIonizedFilter, self.IsIonizedFilter)
+	
+	
+@RegisterAll
+class DoubleContinuumObservablesCoulombZ(DoubleContinuumObservables):
+	"""
+	Observables involving the double continuum, which is defined by a 
+	product of Coulomb waves with charge Z, given in the config
+	object.
+
+	"""
+	def _SetupProjector(self, conf):
+		Z = conf.CoulombWaves.charge
+		return ProductStateProjector(conf, "c%s" % Z, "c%s" % Z, self.IsIonizedFilter, self.IsIonizedFilter)
 		
 
 @RegisterAll

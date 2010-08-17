@@ -397,3 +397,74 @@ class DoubleContinuumPlaneWaveObservables(DoubleContinuumObservables):
 	def __init__(self):
 		raise NotImplementedError("Not implemented yet!")
 
+
+#------------------------------------------------------------------------------
+# Model state decompositions
+#------------------------------------------------------------------------------
+@RegisterAll
+class SingleParticleStateDecomposition(object):
+	"""
+	"""
+	def __init__(self, psi, conf, cutoff, leftModel, rightModel):
+		"""Returns single particle product state decomposition
+
+		Input
+		-----
+		psi: a pyprop wavefunction
+		conf: a pyprop config object
+		cutoff: ignore components with projection less than this
+		leftModel: model to use for left state (he, he+, ...)
+		rightModel: model to use for right state (he, he+, ...)
+
+		"""
+		self.Psi = psi
+		self.Config = copy.copy(conf)
+		self.PopulationCutoff = cutoff
+		self.LeftModel = leftModel
+		self.RightModel = rightModel
+
+		self.OtherProjectors = []
+
+		self.IsBoundFilter = lambda E: E < 0.0
+		
+		#get logger
+		self.Logger = GetClassLogger(self)
+
+		self.Setup()
+
+		
+	def Setup(self):
+		"""
+		"""
+		#Step 1: remove other projections
+		for P in self.OtherProjectors:
+			P.RemoveProjection(self.Psi)
+		
+		#Step 2: create projector
+		self.Logger.info("Setting up product state projector...")
+		self.SingleParticleProjector = \
+				ProductStateProjector(self.Config, self.LeftModel, self.RightModel, \
+				self.IsBoundFilter, self.IsBoundFilter)
+
+		#Step 3: Calculate projections onto product basis states
+		self.Logger.info("Calculating populations...")
+		getRadStates = self.SingleParticleProjector.GetPopulationProductStates
+		self.RadialPopulations = getRadStates(self.Psi)
+
+
+	def GetSingleParticleStateProjections(self):
+		"""Calculate projections onto single particle product states.
+		"""
+		P = {}
+		for l1, l2, pop in self.RadialPopulations:
+			for n1,n2,p in pop:
+				if p < self.PopulationCutoff:
+					continue
+				key = "%i,%i,%i,%i" % (n1,l1,n2,l2)
+				if key in P:
+					P[key] += p
+				else:
+					P[key] = p
+			
+		return P
+

@@ -310,7 +310,7 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		#In order to create an approx to dp/de_1 de_2, we make a 2d 
 		#interpolation for each l-shell
 		#and add coherently to the dpde array
-		P = self.DoubleContinuumProjector
+		P = self.ContinuumProjector
 		for l1, l2, lPop in self.RadialProjections:
 			#number of states in this l-shell (matching energy filter)
 			n1 = P.SingleStatesLeft.GetNumberOfStates(l1, self.IsIonizedFilter)

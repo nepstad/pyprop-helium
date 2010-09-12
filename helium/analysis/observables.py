@@ -103,7 +103,7 @@ class ProductStateContinuumObservables(object):
 	----------
 	"""
 
-	def __init__(self, psi, conf, otherP = []):
+	def __init__(self, psi, conf, otherP = [], ionThreshold = -2.0):
 		"""Return a double continuum observables object
 
 		Input
@@ -115,6 +115,7 @@ class ProductStateContinuumObservables(object):
 		"""
 		self.Psi = psi
 		self.Config = copy.copy(conf)
+		self.IonizationThreshold = ionThreshold
 
 		#get logger
 		self.Logger = GetClassLogger(self)
@@ -172,8 +173,7 @@ class ProductStateContinuumObservables(object):
 
 		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
-		ionThreshold = -2.0
-		self.BoundstateProjector.RemoveProjection(self.Psi, ionThreshold)
+		self.BoundstateProjector.RemoveProjection(self.Psi, self.IonizationThreshold)
 		self.TotalIonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
 		
 		#Step 4: remove other projections
@@ -362,7 +362,17 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	"""
 	def _SetupProjector(self, conf):
 		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, self.IsIonizedFilter)
-	
+
+@RegisterAll
+class DoubleContinuumObservablesHydrogen(DoubleContinuumObservables):
+	"""
+	Observables involving the double continuum, which is defined by a 
+	product of Hydrogen continuum states.
+
+	"""
+	def _SetupProjector(self, conf):
+		return ProductStateProjector(conf, "h", "h", self.IsIonizedFilter, self.IsIonizedFilter)
+
 
 @RegisterAll
 class DoubleContinuumObservablesCoulomb175(DoubleContinuumObservables):

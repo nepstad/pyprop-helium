@@ -66,12 +66,12 @@ class ProgressReport(PropagationTask):
 		t = prop.PropagatedTime
 		norm = prop.psi.GetNorm()
 		corr = abs(prop.psi.InnerProduct(self.InitialPsi))**2
-		eta = self.__EstimateETA(prop)
+		eta = self._EstimateETA(prop)
 		self.TimeList += [t]
 		self.NormList += [norm]
 		self.CorrList += [corr]
-		FormatDuration = lambda t: time.strftime("%Hh %Mm %Ss", time.gmtime(t))
-		PrintOut("t = %.2f / %.2f; N = %.15f; Corr = %.12f, ETA = %s" % (t, prop.Duration, norm, corr, FormatDuration(eta)))
+		#FormatDuration = lambda t: time.strftime("%Hh %Mm %Ss", time.gmtime(t))
+		PrintOut("t = %.2f / %.2f; N = %.15f; Corr = %.12f, ETA = %s" % (t, prop.Duration, norm, corr, self._FormatDuration(eta)))
 
 	def postProcess(self, prop):
 		"""
@@ -89,7 +89,7 @@ class ProgressReport(PropagationTask):
 				h5file.createArray("/", "InitialCorrelation", self.CorrList)
 
 
-	def __EstimateETA(self, prop):
+	def _EstimateETA(self, prop):
 		"""
 		Estimates remaining time before propagation is finished
 		"""
@@ -98,6 +98,20 @@ class ProgressReport(PropagationTask):
 		eta = totalTime - curTime
 		return eta
 
+
+	def _FormatDuration(self, t):
+		days, remainder = divmod(t, 24 * 60 * 60)
+		hours, remainder = divmod(remainder, 60 * 60)
+		minutes, seconds = divmod(remainder, 60)
+		if days > 0:
+			timeStr = "%id %ih" % (days, hours)
+		elif hours > 0:
+			timeStr = "%ih %im" % (hours, minutes)
+		else:
+			timeStr = "%im %is" % (minutes, seconds)
+			
+		return timeStr
+	
 
 class DisplayGMRESError(PropagationTask):
 	"""

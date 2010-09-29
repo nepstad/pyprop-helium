@@ -7,8 +7,12 @@ integrated/differential probabilities, etc.
 
 """
 import copy
-from numpy import real, linspace, outer, diff, zeros, double, array, interp
+from numpy import real, linspace, outer, diff, zeros, double, array, interp, pi, linspace, unique
+from numpy import int32, sqrt, exp, arctan2, cos, sin, imag, maximum, conj
 from numpy import abs as nabs
+import scipy.interpolate
+from helium.configtools import Getlmax
+from helium.analysis.indextricks import GetAngularRankIndex, GetLocalCoupledSphericalHarmonicIndices
 
 #scipy not always available, workaround hack
 try:
@@ -19,7 +23,10 @@ except:
 import pyprop
 from ..utils import RegisterAll, GetClassLogger
 from .projectors import EigenstateProjector
-from .projectors import ProductStateProjector 
+from .projectors import ProductStateProjector
+
+from above import GetCoulombPhase, AddDoubleAngularProjectionCoplanar
+from tools import GetSphericalHarmonics
 
 #------------------------------------------------------------------------------
 # Continuum observables 
@@ -125,6 +132,8 @@ class ProductStateContinuumObservables(object):
 		self.BoundstateProjector = EigenstateProjector(conf)
 
 		#setup product state projector
+		self.IsCoulombic = False
+		self.Z = None
 		self.Logger.info("Setting up product state projector...")
 		self.IsIonizedFilter = lambda E: 0.0 < E
 		self.IsBoundFilter = lambda E: not self.IsIonizedFilter(E)
@@ -346,9 +355,106 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		return E, dpde
 
 
-	def GetAngularDistributionCoplanar(self):
-		raise NotImplementedError("Not implemented yet!")
+	def GetAngularDistributionCoplanar(self, energyGrid, thetaGrid, phi1, phi2):
+		"""Calculate co-planar angular distribution.
+		
+		"""
+		
+		lmax = Getlmax(self.Config)
+		angularRank = GetAngularRankIndex(self.Psi)
 
+		#Get spherical harmonics at phi1 and phi2
+		assocLegendre1 = array(GetSphericalHarmonics(lmax, thetaGrid, phi1), dtype=complex)
+		assocLegendre2 = array(GetSphericalHarmonics(lmax, thetaGrid, phi2), dtype=complex)
+		
+		#calculate angular distr for double ionized psi, evaluated at phi1=phi2=phi
+		#f = angular_distributions.GetDoubleAngularDistributionCoplanar
+		#f(self.Psi, self.Z, energyGrid, self.RadialProjections, assocLegendre1, assocLegendre2, thetaGrid)
+		
+		#Make a copy of the wavefunction and multiply 
+		#integration weights and overlap matrix
+		tempPsi = self.Psi.Copy()
+		repr = self.Psi.GetRepresentation()
+		repr.MultiplyIntegrationWeights(tempPsi)
+		angRepr = repr.GetRepresentation(angularRank)
+	
+		cg = pyprop.core.ClebschGordan()
+	
+		interpCount = len(energyGrid)
+	
+		thetaCount = len(thetaGrid)
+		angularDistr = zeros((thetaCount, thetaCount, interpCount, interpCount), dtype=double)
+	
+		pop = 0
+		angularDistrProj = zeros(angularDistr.shape, dtype=complex)
+		P = self.ContinuumProjector
+		doubleIonProb = 0
+		for l1, l2, lPop in self.RadialProjections:
+			#number of states in this l-shell (matching energy filter)
+			n1 = P.SingleStatesLeft.GetNumberOfStates(l1, self.IsIonizedFilter)
+			n2 = P.SingleStatesRight.GetNumberOfStates(l2, self.IsIonizedFilter)
+	
+			#sum up angular momentum components
+			pop = (nabs(lPop)**2).sum(axis=0).reshape(n1, n2)
+	
+			#add contribution to total double ionization prob.
+			doubleIonProb += sum(pop.flatten())
+	
+			#scale states with 1/dE_1 dE_2
+			E1 = array(P.SingleStatesLeft.GetRadialEnergies(l1, self.IsIonizedFilter))
+			E2 = array(P.SingleStatesRight.GetRadialEnergies(l2, self.IsIonizedFilter))
+			
+			#filter out coupled spherical harmonic indices. this gives us a set of L's for the given l1, l2, M
+			lfilter = lambda coupledIndex: coupledIndex.l1 == l1 and coupledIndex.l2 == l2  
+			angularIndices = array(GetLocalCoupledSphericalHarmonicIndices(self.Psi, lfilter), dtype=int32)
+			getIdx = lambda c: angRepr.Range.GetCoupledIndex(int(c))
+			coupledIndices = map(getIdx, angularIndices)
+	
+			if len(angularIndices) == 0:
+				continue
+		
+			#scale states with 1/dE_1 dE_2
+			def GetDensity(curE):
+				interiorSpacing = list(diff(curE)[1:])
+				leftSpacing = (curE[1] - curE[0])
+				rightSpacing = (curE[-1] - curE[-2])
+				spacing = array([leftSpacing] + interiorSpacing + [rightSpacing])
+				return 1.0 / sqrt(spacing)
+			stateDensity = outer(GetDensity(E1), GetDensity(E2))
+	
+			#coulomb phases (-i)**(l1 + l2) * exp( sigma_l1 * sigma_l2 )
+			phase1 = exp(1.0j * array([GetCoulombPhase(l1, -self.Z/curK) for curK in sqrt(2*E1)]))
+			phase2 = exp(1.0j * array([GetCoulombPhase(l2, -self.Z/curK) for curK in sqrt(2*E2)]))
+			phase = (-1.j)**(l1 + l2) * outer(phase1, phase2)
+	
+			#interpolate projection on equidistant energies and sum over L and M
+			#interpProj = zeros((interpCount, interpCount), dtype=complex)
+			for j in range(lPop.shape[0]):
+				curRadialProj = phase * stateDensity * lPop[j,:,:]
+	
+				#interpolate in polar complex coordinates
+				def dointerp():
+					r = abs(curRadialProj)**2
+					i = arctan2(imag(curRadialProj), real(curRadialProj))
+					argr = cos(i)
+					argi = sin(i)
+					interpr = scipy.interpolate.RectBivariateSpline(E1, E2, r, kx=1, ky=1)(energyGrid, energyGrid)
+					interpArgR = scipy.interpolate.RectBivariateSpline(E1, E2, argr, kx=1, ky=1)(energyGrid, energyGrid)
+					interpArgI = scipy.interpolate.RectBivariateSpline(E1, E2, argi, kx=1, ky=1)(energyGrid, energyGrid)
+					interpPhase = (interpArgR + 1.j*interpArgI) / sqrt(interpArgR**2 + interpArgI**2)
+					curInterpProj = sqrt(maximum(interpr, 0)) * interpPhase
+					return curInterpProj
+				curInterpProj = dointerp()
+	
+				#Sum over m:
+				def doSum():
+					AddDoubleAngularProjectionCoplanar(angularDistrProj, assocLegendre1, assocLegendre2, curInterpProj, coupledIndices[j])
+				doSum()
+	
+		#calculate projection for this m-shell
+		angularDistr = real(angularDistrProj * conj(angularDistrProj))
+	
+		return angularDistr
 
 #
 # Implementations of specific double continua, such as i.e. He+ x He+ 
@@ -361,6 +467,8 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 
 	"""
 	def _SetupProjector(self, conf):
+		self.IsCoulombic = True
+		self.Z = 2.0
 		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, self.IsIonizedFilter)
 
 @RegisterAll
@@ -371,6 +479,8 @@ class DoubleContinuumObservablesHydrogen(DoubleContinuumObservables):
 
 	"""
 	def _SetupProjector(self, conf):
+		self.IsCoulombic = True
+		self.Z = 1.0
 		return ProductStateProjector(conf, "h", "h", self.IsIonizedFilter, self.IsIonizedFilter)
 
 
@@ -382,6 +492,8 @@ class DoubleContinuumObservablesCoulomb175(DoubleContinuumObservables):
 
 	"""
 	def _SetupProjector(self, conf):
+		self.IsCoulombic = True
+		self.Z = 1.75
 		return ProductStateProjector(conf, "c175", "c175", self.IsIonizedFilter, self.IsIonizedFilter)
 	
 	
@@ -394,8 +506,9 @@ class DoubleContinuumObservablesCoulombZ(DoubleContinuumObservables):
 
 	"""
 	def _SetupProjector(self, conf):
-		Z = conf.CoulombWaves.charge
-		return ProductStateProjector(conf, "c%s" % Z, "c%s" % Z, self.IsIonizedFilter, self.IsIonizedFilter)
+		self.IsCoulombic = True
+		self.Z = conf.CoulombWaves.charge
+		return ProductStateProjector(conf, "c%s" % self.Z, "c%s" % self.Z, self.IsIonizedFilter, self.IsIonizedFilter)
 		
 
 @RegisterAll

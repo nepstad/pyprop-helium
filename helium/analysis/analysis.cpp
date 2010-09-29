@@ -222,8 +222,42 @@ void AddDoubleAngularProjectionAvgPhi(Array<cplx, 4> angularData, Array<cplx, 2>
 					* radialProj(tensor::k, tensor::l);
 }
 
-void AddDoubleAngularProjectionCoplanar(Array<cplx, 4> angularData, Array<cplx, 2> sphericalHarmonics, 
-		Array<cplx, 2> radialProj, CoupledSpherical::CoupledIndex coupledIndex)
+//void AddDoubleAngularProjectionCoplanar(Array<cplx, 4> angularData, Array<cplx, 2> sphericalHarmonics,
+//		Array<cplx, 2> radialProj, CoupledSpherical::CoupledIndex coupledIndex)
+//{
+//	CoupledSpherical::ClebschGordan cg;
+//
+//	int l1 = coupledIndex.l1;
+//	int l2 = coupledIndex.l2;
+//	int L = coupledIndex.L;
+//	int M = coupledIndex.M;
+//
+//	//intuitively obvious:
+//	int mMin = std::max(-l1, M-l2);
+//	int mMax = std::min(l1, M+l2);
+//	for (int m=mMin; m<=mMax; m++)
+//	{
+//		//create a view to the current spherical harmonic and radialProjection arrays
+//		Array<cplx, 1> sph1 = sphericalHarmonics( MapLmIndex(l1, m), Range::all());
+//		Array<cplx, 1> sph2 = sphericalHarmonics( MapLmIndex(l2, M-m), Range::all());
+//		double curCg = cg(l1, l2, m, M-m, L, M);
+//
+//		//Add data
+//		angularData +=    curCg * sph1(tensor::i) * sph2(tensor::j)
+//						* radialProj(tensor::k, tensor::l);
+//	}
+//
+//}
+
+#include "../../pyprop/core/utility/fortran.h"
+
+extern "C"
+	{
+		extern void FORTRAN_NAME(sumangularprojection)(cplx* angularData, cplx* radialProj, cplx* angularFactor, int* adExtent0, int* adExtent1);
+	}
+
+void AddDoubleAngularProjectionCoplanar(Array<cplx, 4> angularData, Array<cplx, 2> sphericalHarmonics1,
+		Array<cplx, 2> sphericalHarmonics2, Array<cplx, 2> radialProj, CoupledSpherical::CoupledIndex coupledIndex)
 {
 	CoupledSpherical::ClebschGordan cg;
 
@@ -235,21 +269,46 @@ void AddDoubleAngularProjectionCoplanar(Array<cplx, 4> angularData, Array<cplx, 
 	//intuitively obvious:
 	int mMin = std::max(-l1, M-l2);
 	int mMax = std::min(l1, M+l2);
+//	for (int m=mMin; m<=mMax; m++)
+//	{
+//		//create a view to the current spherical harmonic and radialProjection arrays
+//		Array<cplx, 1> sph1 = sphericalHarmonics1( MapLmIndex(l1, m), Range::all());
+//		Array<cplx, 1> sph2 = sphericalHarmonics2( MapLmIndex(l2, M-m), Range::all());
+//		double curCg = cg(l1, l2, m, M-m, L, M);
+//
+//		//Add data
+//		angularData +=    curCg * sph1(tensor::i) * sph2(tensor::j)
+//						* radialProj(tensor::k, tensor::l);
+//	}
+
+	int adExtent2 = angularData.extent(2);
+	int adExtent3 = angularData.extent(3);
+
 	for (int m=mMin; m<=mMax; m++)
 	{
 		//create a view to the current spherical harmonic and radialProjection arrays
-		Array<cplx, 1> sph1 = sphericalHarmonics( MapLmIndex(l1, m), Range::all());
-		Array<cplx, 1> sph2 = sphericalHarmonics( MapLmIndex(l2, M-m), Range::all());
+		Array<cplx, 1> sph1 = sphericalHarmonics1( MapLmIndex(l1, m), Range::all());
+		Array<cplx, 1> sph2 = sphericalHarmonics2( MapLmIndex(l2, M-m), Range::all());
 		double curCg = cg(l1, l2, m, M-m, L, M);
-		
-		//Add data
-		angularData +=    curCg * sph1(tensor::i) * sph2(tensor::j)
-						* radialProj(tensor::k, tensor::l);
+
+		for (int i=0; i<angularData.extent(0); i++)
+		{
+			for (int j=0; j<angularData.extent(1); j++)
+			{
+				cplx A = curCg * sph1(i) * sph2(j);
+
+				Array<cplx, 2> angData = angularData(i, j, Range::all(), Range::all());
+				FORTRAN_NAME(sumangularprojection)(angData.data(), radialProj.data(), &A, &adExtent2, &adExtent3);
+
+			//	for (int k=0; k<angularData.extent(2); k++)
+			//	{
+			//		//Add data
+			//		angularData(i,j,k,Range::all()) +=  A * radialProj(k, Range::all());
+			//	}
+			}
+		}
 	}
-
 }
-
-
 
 
 void AddSingleAngularProjectionAvgPhi(Array<cplx, 3> angularData, Array<cplx, 2> sphericalHarmonics,

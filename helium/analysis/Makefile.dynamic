@@ -7,8 +7,10 @@ INCLUDE      := $(INCLUDE) -I$(PYPROP_ROOT)/
 
 PYSTEFILES   := wrapper.pyste
 SOURCEFILES  := wrapper.cpp
-OBJECTS      := $(SOURCEFILES:.cpp=.o)
+OBJECTS      := $(SOURCEFILES:.cpp=.o) analysis_fortran.o
 MODULENAME   := libheliumanalysis
 
 -include $(PYPROP_ROOT)/core/makefiles/Makefile.extension
 
+analysis_fortran.o:
+	gfortran -fPIC -O3 -ffast-math -ffree-line-length-none -c analysis_fortran.f90

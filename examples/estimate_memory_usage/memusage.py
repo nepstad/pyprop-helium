@@ -31,9 +31,11 @@ def ShowProblemMemoryUsage(conf):
 	angularRank = GetAngularRank(conf)
 	
 	#assemble problem size info
-	#with pyprop.EnableRedirect():
-	potentialInfo = GetProblemSizeInfo(conf)
-
+	with pyprop.EnableRedirect():
+		potentialInfo = GetProblemSizeInfo(conf)
+		psiShape = GetWavefunctionShape(conf)
+	
+	numProcs = psiShape[angularRank]
 	totMem = 0
 	totProcMem = 0
 	for potName, potInfo in potentialInfo.iteritems():
@@ -51,9 +53,11 @@ def ShowProblemMemoryUsage(conf):
 		pyprop.PrintOut(potName)
 		pyprop.PrintOut("  Total memory usage = %.2f GB" % memUsage)
 		pyprop.PrintOut("  Max proc memory usage = %.2f MB" % procMem)
-
-	pyprop.PrintOut("  Total memory usage = %.2f GB" % totMem)
-	pyprop.PrintOut("  Max total proc memory usage = %.2f MB" % totProcMem)
+	
+	pyprop.PrintOut("")
+	pyprop.PrintOut("Number of procs: %i" % numProcs) 
+	pyprop.PrintOut("Total memory usage = %.2f GB" % totMem)
+	pyprop.PrintOut("Max total proc memory usage = %.2f MB" % totProcMem)
 
 
 def GetProblemSizeInfo(conf):
@@ -133,3 +137,11 @@ def GetRanks(conf):
 
 	"""
 	return conf.Representation.rank
+
+
+def GetWavefunctionShape(conf):
+	distr = pyprop.CreateDistribution(conf)
+	representation = pyprop.CreateRepresentation(conf, distr)
+	return representation.GetInitialShape()
+
+

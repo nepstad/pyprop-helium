@@ -1,1 +1,59 @@
-See helium/README
+Helium, a Pyprop package
+========================
+
+This package contains modules for performing 5(6)-dimensional calculations with
+Helium-like systems. Time stepping, eigenstate finder and final state analysis 
+functionality is provided.
+
+
+Getting started
+---------------
+
+1) Create symlink to Pyprop location
+
+	ln -s /path/to/pyprop pyprop
+	
+2) Configure makefiles for local environment
+	
+	cd helium
+	cp Makefile.platform.example Makefile.platform
+	Edit Makefile.platform, change it to reflect your local environment. 
+
+3) Compile all the Helium C++ libraries
+	
+	make
+	
+4) Create a package configuration
+	
+	cp siteconfig-example.py siteconfig.py
+	edit siteconfig.py
+	
+	The file locations in siteconfig.py are used to fetch/store bound states and single 
+	particle data, and should be set accordingly.
+
+For examples of use of the Helium package, take a look in the example/ subfolder.
+	
+ 
+Package structure
+-----------------
+doc/                            Documentation
+example/                        A few simple examples (in progress)
+helium/                         
+	__init__.py
+	siteconfig-example.py
+	siteconfig.py
+	utils.py
+
+	analysis/                    Stuff related to analysis of wavefunction
+
+	core/                        Potentials and other core functionality
+
+	eigenvalues/                 Finding eigenpairs
+	
+	propagation/                 Time propagation
+		propagation.py               Control code for time propagation
+		tasks.py                     Common propagation tasks
+	
+	namecontroller/              Generate names for data files
+
+

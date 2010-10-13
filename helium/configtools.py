@@ -91,3 +91,37 @@ def UpdateConfig(conf, updateParams):
 	newConf = pyprop.Config(tmpConf.cfgObj)
 	
 	return newConf
+
+
+@RegisterAll
+def GetIntensity(conf):
+	"""Return intensity in SI units from a pyprop config instance
+
+	Input
+	-----
+	conf: a pyprop config object
+
+	Returns
+	-------
+	I: (float) field intensity in SI units
+
+	Raises
+	------
+	If e.m. gauge could not be determined, raises Exception()
+
+	"""
+	amplitude = conf.PulseParameters.amplitude
+	#determine e.m. gauge
+	#timefuncName = conf.PulseParameters.time_function.__name__
+	#if timefuncName == "LaserFunctionVelocity" \
+	velocity_gauge = lambda el: el.startswith("LaserPotentialVelocity") 
+	length_gauge = lambda el: el.startswith("LaserPotentialLength") 
+
+	if map(velocity_gauge, conf.Propagation.grid_potential_list):
+		E0 = amplitude * conf.PulseParameters.frequency
+	elif map(length_gauge, conf.Propagation.grid_potential_list):
+		E0 = amplitude
+	else:
+		raise Exception("Could not determine electromagnetic gauge!")
+
+	return pyprop.utilities.IntensitySIFromElectricFieldAtomic(E0)

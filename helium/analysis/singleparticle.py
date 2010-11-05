@@ -128,6 +128,6 @@ class SingleParticleStates(object):
 					raise Exception("Unknown ordering: %s" % self.Ordering)
 
 		#Do the loading; always close file
-		with tables.openFile(self.FileName, "r") as f:
+		with tables.openFile(self.FileName, "r", MAX_THREADS=1) as f:
 			loadStates(f)
 

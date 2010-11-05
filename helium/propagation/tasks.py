@@ -79,7 +79,7 @@ class ProgressReport(PropagationTask):
 		"""
 		if pyprop.ProcId == 0:
 			nodeNames = ["SampleTimes", "Norm", "InitialCorrelation"]
-			with tables.openFile(self.OutputFileName, "r+") as h5file:
+			with tables.openFile(self.OutputFileName, "r+", MAX_THREADS=1) as h5file:
 				for nodeName in nodeNames:
 					if nodeName in h5file.root:
 						h5file.removeNode(h5file.root, nodeName, recursive=True)
@@ -158,7 +158,7 @@ class SaveWavefunction(PropagationTask):
 			#store current wavefunction and propagation time
 			prop.SaveWavefunctionHDF(filename, "/wavefunction")
 			if pyprop.ProcId == 0:
-				with tables.openFile(filename, "r+") as h5:
+				with tables.openFile(filename, "r+", MAX_THREADS=1) as h5:
 					h5.setNodeAttr("/wavefunction", "prop_time", prop.PropagatedTime)
 			pypar.barrier()
 

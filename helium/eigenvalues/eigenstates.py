@@ -83,7 +83,7 @@ class Eigenstates(object):
 			curEnergyList = []
 
 			#Get energies
-			with tables.openFile(filename, "r") as f:
+			with tables.openFile(filename, "r", MAX_THREADS=1) as f:
 				eigenvalues = f.root.Eig.Eigenvalues[:]
 		
 			#Load all eigenstates
@@ -120,7 +120,7 @@ def LoadBoundstateIndex(psi, filename, eigenvectorIndex):
 
 	logger.info("Loading bound state #%i from %s" % (eigenvectorIndex, filename))
 	
-	with tables.openFile(filename, "r") as f:
+	with tables.openFile(filename, "r", MAX_THREADS=1) as f:
 		#Get eigenvector dataset
 		eigVec = f.getNode(GetEigenvectorDatasetPath(eigenvectorIndex))
 

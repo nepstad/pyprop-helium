@@ -47,9 +47,10 @@ class EigenstateProjector(Projector):
 	H|a> = E_a|a>. 
 	"""
 
-	def __init__(self, conf):
+	def __init__(self, conf, ionThrehold):
 		self.Config = conf
 		self.Eigenstates = Eigenstates(conf)
+		self.IonThreshold = ionThrehold
 
 
 	def ProjectOnto(self, psi):
@@ -59,7 +60,7 @@ class EigenstateProjector(Projector):
 		raise NotImplementedError("Not implemented yet")
 
 	
-	def RemoveProjection(self, psi, ionThreshold):
+	def RemoveProjection(self, psi):
 		"""Remove bound part of psi in-place
 		"""
 		prevL = -1
@@ -69,10 +70,10 @@ class EigenstateProjector(Projector):
 		psiRank = psi.GetRank()
 		
 		#work buffer wavefunction
-		projPsi = self.Eigenstates.GetBoundstates(0, ionThreshold)[0].Copy()
+		projPsi = self.Eigenstates.GetBoundstates(0, self.IonThreshold)[0].Copy()
 		projPsi.Clear()
 
-		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(ionThreshold):
+		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(self.IonThreshold):
 			#Find all Ms for this L
 			cpldIdx = angrepr.Range.GetCoupledIndex
 			Mlist = unique([cpldIdx(i).M for i in range(psi.GetData().shape[angularRank]) if cpldIdx(i).L == L])			

@@ -60,7 +60,7 @@ class ContinuumObservables(object):
 
 		#setup bound state projector
 		self.Logger.info("Setting up bound state projector...")
-		self.BoundstateProjector = EigenstateProjector(conf)
+		self.BoundstateProjector = EigenstateProjector(conf, ionThreshold)
 		
 		#keep ionization data
 		self.InitialProbability = -1
@@ -82,7 +82,7 @@ class ContinuumObservables(object):
 
 		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
-		self.BoundstateProjector.RemoveProjection(self.Psi, self.IonThreshold)
+		self.BoundstateProjector.RemoveProjection(self.Psi)
 		self.IonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
 		
 		
@@ -129,7 +129,7 @@ class ProductStateContinuumObservables(object):
 
 		#setup bound state projector
 		self.Logger.info("Setting up bound state projector...")
-		self.BoundstateProjector = EigenstateProjector(conf)
+		self.BoundstateProjector = EigenstateProjector(conf, ionThreshold)
 
 		#setup product state projector
 		self.IsCoulombic = False
@@ -182,7 +182,7 @@ class ProductStateContinuumObservables(object):
 
 		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
-		self.BoundstateProjector.RemoveProjection(self.Psi, self.IonizationThreshold)
+		self.BoundstateProjector.RemoveProjection(self.Psi)
 		self.TotalIonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
 		
 		#Step 4: remove other projections
@@ -548,7 +548,8 @@ class SingleParticleStateDecomposition(object):
 
 		self.OtherProjectors = []
 
-		self.IsBoundFilter = lambda E: E < 0.0
+		self.LeftFilter = lambda E: E < 0.0
+		self.RightFilter = lambda E: E < 0.0
 		
 		#get logger
 		self.Logger = GetClassLogger(self)
@@ -567,12 +568,14 @@ class SingleParticleStateDecomposition(object):
 		self.Logger.info("Setting up product state projector...")
 		self.SingleParticleProjector = \
 				ProductStateProjector(self.Config, self.LeftModel, self.RightModel, \
-				self.IsBoundFilter, self.IsBoundFilter)
+				self.LeftFilter, self.RightFilter)
 
 		#Step 3: Calculate projections onto product basis states
 		self.Logger.info("Calculating populations...")
-		getRadStates = self.SingleParticleProjector.GetPopulationProductStates
-		self.RadialPopulations = getRadStates(self.Psi)
+		#getRadStates = self.SingleParticleProjector.GetPopulationProductStates
+		#self.RadialPopulations = getRadStates(self.Psi)
+		getRadStates = self.SingleParticleProjector.GetProjectionAllRadialStates
+		self.RadialProjections = getRadStates(self.Psi)
 
 
 	def GetSingleParticleStateProjections(self):
@@ -589,5 +592,25 @@ class SingleParticleStateDecomposition(object):
 				else:
 					P[key] = p
 			
+		return P
+
+	def GetAngularMomentumProjections(self):
+		"""Calculate projections onto angular momentum product states.
+		
+		Sum over radial states to obtain populations in (l1,l2) product 
+		states.
+		
+		"""
+		P = {}
+		for l1, l2, pop in self.RadialProjections:
+			p = sum(abs(pop.flatten())**2)
+			if p < self.PopulationCutoff:
+				continue
+			key = "%i,%i" % (l1,l2)
+			if key in P:
+				P[key] += p
+			else:
+				P[key] = p
+
 		return P
 

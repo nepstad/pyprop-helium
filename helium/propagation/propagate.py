@@ -2,12 +2,22 @@
 Propagate
 =========
 
+Classes which wraps Pyprop problems and structures the propagation flow into
+four distinct steps: init, pre-process, run and post-process. This has turned
+out to be a convenient way to treat most propagation problems, as most operations
+one might wish to perform invariably fall into one of said categories.
+
+The general idea here is that all operations besides the actual propagation
+are implemented as propagation tasks, which are initialized by the user and
+then passed as a list to the Propagate class (or derivatives thereof) - see
+tasks.py for examples of how these should/could be implemented.  
+
 """
 
 import pyprop
 from helium.utils import GetClassLogger
 
-class Propagate:
+class Propagate(object):
 	"""
 	Setup and run a Pyprop problem.
 	
@@ -39,7 +49,7 @@ class Propagate:
 		"""
 		Propagate problem until end time.
 		"""
-		for t in self.Problem.Advance(self.NumberOfCallbacks):
+		for _ in self.Problem.Advance(self.NumberOfCallbacks):
 			for task in self.PropagationTasks:
 				task.callback(self.Problem)
 		
@@ -70,3 +80,38 @@ class Propagate:
 
 		return energy
 	
+	
+class PropagateYieldCondition(Propagate):
+	"""
+	Setup and run a Pyprop problem, with a given condition of when to
+	return flow control to user. The condition is specified in terms 
+	of a function which takes the current state of the system as an
+	argument (a Pyprop problem).
+	
+	See also Propagate.
+	
+	"""
+	
+	def __init__(self, conf, propagationTasks, yieldCondition):
+		#Call on constructor of superclass
+		super(PropagateYieldCondition, self).__init__(conf, propagationTasks, None)
+		
+		#Keep the yield condition (function)
+		self.YieldCondition = yieldCondition
+		
+	def run(self):
+		"""
+		Propagate problem until end time. Check if YieldCondition is fulfilled
+		in each time step, if so, call all propagation tasks.
+		"""
+		for _ in self.Problem.Advance(True):
+			if self.YieldCondition(self.Problem):
+				for task in self.PropagationTasks:
+					task.callback(self.Problem)
+		
+		#run postprocessing
+		self.postProcess()
+		
+		
+
+		

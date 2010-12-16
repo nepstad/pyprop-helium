@@ -23,7 +23,7 @@ def CreatePath(absFileName):
 	pypar.barrier()
 	
 
-class PropagationTask:
+class PropagationTask(object):
 	def __init__(self):
 		raise NotImplementedError("Please implement in derived class")
 	
@@ -112,7 +112,36 @@ class ProgressReport(PropagationTask):
 			
 		return timeStr
 	
+	
+@RegisterAll
+class ProgressReportRestart(ProgressReport):
+	"""
+	Similar to ProgressReport, this class is adapted for the case when a propagation
+	is restarted. Progress information collected during propagation is added to that
+	found in the restart file, and then stored back to that file.
+	
+	"""
+	
+	def postProcess(self, prop):
+		"""
+		Store problem information collected during propagation, together with
+		that which was already present in the restartFile
+		"""
+		if pyprop.ProcId == 0:
+			nodeNames = ["SampleTimes", "Norm", "InitialCorrelation"]
+			oldData = {}
+			with tables.openFile(self.OutputFileName, "r+", MAX_THREADS=1) as h5file:				
+				for nodeName in nodeNames:
+					oldData[nodeName] = h5file.getNode(h5file.root, nodeName)[:]
+					if nodeName in h5file.root:
+						h5file.removeNode(h5file.root, nodeName, recursive=True)
 
+				h5file.createArray("/", "SampleTimes", oldData["SampleTimes"] + self.TimeList)
+				h5file.createArray("/", "Norm", oldData["Norm"] + self.NormList)
+				h5file.createArray("/", "InitialCorrelation", oldData["InitialCorrelation"] + self.CorrList)
+	
+	
+@RegisterAll
 class DisplayGMRESError(PropagationTask):
 	"""
 	Print GMRES solver error at each callback
@@ -129,16 +158,17 @@ class DisplayGMRESError(PropagationTask):
 	def postProcess(self, prop):
 		pass
 
-
+@RegisterAll
 class SaveWavefunction(PropagationTask):
 	"""
 	Save wavefunction after propagation, and, if specified, for each
 	callback during propagation
 	"""
 
-	def __init__(self, storeDuringPropagation):
+	def __init__(self, storeDuringPropagation, counterStart=0, storeInitialPsi=True):
 		self.StoreDuringPropagation = storeDuringPropagation
-		self.Counter = 0
+		self.Counter = counterStart
+		self.StoreInitialWavefunction = storeInitialPsi
 
 	def setupTask(self, prop):
 		#get output filename
@@ -148,7 +178,8 @@ class SaveWavefunction(PropagationTask):
 		CreatePath(self.OutputFileName)
 
 		#store the initial wavefunction
-		prop.SaveWavefunctionHDF(self.OutputFileName, "/initialWavefunction")
+		if self.StoreInitialWavefunction:
+			prop.SaveWavefunctionHDF(self.OutputFileName, "/initialWavefunction")
 
 	def callback(self, prop):
 		if self.StoreDuringPropagation:
@@ -167,4 +198,3 @@ class SaveWavefunction(PropagationTask):
 	def postProcess(self, prop):
 		#store the final wavefunction
 		prop.SaveWavefunctionHDF(self.OutputFileName, "/wavefunction")
-

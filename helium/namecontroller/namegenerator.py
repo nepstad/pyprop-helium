@@ -43,8 +43,8 @@ def GetBoundstateFilename(conf, L, M=0):
 
 	#Get custom postfix for filename, if specified
 	customPostfix = ""
-	#if hasattr(conf, "Special"):
-	#	customPostfix = "_%s" % getattr(conf.Special, "custom_postfix", "")
+	if hasattr(conf, "Special"):
+		customPostfix = "_%s" % getattr(conf.Special, "boundstate_postfix", "")
 
 	#Generate radial and angular postfixes from config
 	radialPostfix = "_".join(GetRadialPostfix(localConf))

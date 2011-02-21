@@ -60,7 +60,7 @@ struct DiatomicCoulomb_3_Wrapper: DiatomicCoulomb<3>
 
 
 // Module ======================================================================
-void Export_hydrogenmolecule_wrapper()
+void Export_diatomicpotential_wrapper()
 {
     class_< DiatomicCoulomb<3>, DiatomicCoulomb_3_Wrapper >("DiatomicCoulomb_3", init<  >())
         .def(init< const DiatomicCoulomb<3>& >())

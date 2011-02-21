@@ -1,3 +1,0 @@
-#Laser Potentials (Length Gauge)
-CustomPotential = Template("DiatomicCoulomb", "diatomicpotential.cpp")
-CustomPotential("3", "DiatomicCoulomb_3")

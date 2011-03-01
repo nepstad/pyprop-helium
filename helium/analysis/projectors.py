@@ -12,6 +12,7 @@ from ..eigenvalues.eigenstates import Eigenstates
 from .singleparticle import SingleParticleStates
 from .above import CalculatePopulationRadialProductStates
 from .above import CalculateProjectionRadialProductStates
+from .above import RemoveProjectionRadialProductStates
 from .indextricks import GetLocalCoupledSphericalHarmonicIndices
 
 
@@ -132,9 +133,49 @@ class ProductStateProjector(Projector):
 	def ProjectOnto(self, psi):
 		raise NotImplementedError("Not implemented yet!")
 
+	def RemoveProjection(self, psi):
+		self.ProjectOntoComplement(psi)
 
 	def ProjectOntoComplement(self, psi):
-		raise NotImplementedError("Not implemented yet!")
+		"""
+		Makes psi orthogonal to a set of single electron product states
+
+		psi =  (I - sum_{i,j} |j(2), i(1)> <i(1), j(2)|) | psi(1,2) >
+
+		where i and j are single particles states.
+		
+		the projection is carried out for every combination of singlestate1 and singlestate2i
+		"""
+
+		#Make a copy of the wavefunction and multiply 
+		#integration weights and overlap matrix
+		tempPsi = psi.Copy()
+		repr = psi.GetRepresentation()
+		repr.MultiplyIntegrationWeights(tempPsi)
+		distr = psi.GetRepresentation().GetDistributedModel()
+
+		data = tempPsi.GetData()
+
+		itLeftStates = self.SingleStatesLeft.IterateFilteredRadialStates
+		itRightStates = self.SingleStatesRight.IterateFilteredRadialStates
+
+		for l1, V1 in itLeftStates(self.EnergyFilterLeft):
+			if V1.size == 0:
+				continue
+			for l2, V2 in itRightStates(self.EnergyFilterRight):
+				if V2.size == 0:
+					continue
+
+				#filter out coupled spherical harmonic indices corresponding
+				#to this l
+				angularIndices = self.__GetFilteredAngularIndices(l1, l2, psi)
+
+				#check that wavefunctions contained given angular momenta
+				if len(angularIndices) == 0:
+					continue			
+
+				#Remove projection for every combination of v1 and v2
+				projV = RemoveProjectionRadialProductStates(l1, V1, l2, V2, data, angularIndices, psi.GetData())
 
 
 	def GetPopulationProductStates(self, psi):

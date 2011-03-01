@@ -206,8 +206,8 @@ class SingleContinuumObservables(ProductStateContinuumObservables):
 	----------
 	"""
 
-	def _SetupProjector(self, conf):
-		return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, self.IsBoundFilter)
+	#def _SetupProjector(self, conf):
+	#	return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, self.IsBoundFilter)
 			
 	def GetSingleIonizationProbability(self):
 		"""Calculate single ionization probability
@@ -276,6 +276,34 @@ class SingleContinuumObservables(ProductStateContinuumObservables):
 	def GetAngularDistributionCoplanar(self):
 		raise NotImplementedError("Not implemented yet!")
 
+#
+# Implementations of specific single continua, such as i.e. H x He+ 
+#
+@RegisterAll
+class SingleContinuumObservablesHydrogenHePlus(SingleContinuumObservables):
+	"""
+	Observables involving the single continuum, which is defined by a 
+	product of Hydrogen continuum and He+ bound states.
+
+	"""
+	def _SetupProjector(self, conf):
+		self.IsCoulombic = True
+		self.Z = 2.0
+		return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, \
+			self.IsBoundFilter)
+
+
+class SingleContinuumObservablesBoxHydrogen(SingleContinuumObservables):
+	"""
+	Observables involving the single continuum, which is defined by a 
+	product of box continuum and Hydrogen bound states.
+
+	"""
+	def _SetupProjector(self, conf):
+		self.IsCoulombic = False
+		self.Z = 0.5
+		return ProductStateProjector(conf, "box", "h", self.IsIonizedFilter, \
+			self.IsBoundFilter)
 
 #------------------------------------------------------------------------------
 # Double continuum observables 
@@ -355,7 +383,8 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		return E, dpde
 
 
-	def GetAngularDistributionCoplanar(self, energyGrid, thetaGrid, phi1, phi2):
+	def GetAngularDistributionCoplanar(self, energyGrid, thetaGrid, phi1, phi2,\
+		customLFilter=lambda l1,l2: True):
 		"""Calculate co-planar angular distribution.
 		
 		"""
@@ -390,6 +419,12 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		P = self.ContinuumProjector
 		doubleIonProb = 0
 		for l1, l2, lPop in self.RadialProjections:
+
+			#Check if we should skip this combination of l1,l2
+			if not customLFilter(l1,l2):
+				self.Logger.debug("Skipping (l1,l2) = (%i,%i)" % (l1,l2))
+				continue
+
 			#number of states in this l-shell (matching energy filter)
 			n1 = P.SingleStatesLeft.GetNumberOfStates(l1, self.IsIonizedFilter)
 			n2 = P.SingleStatesRight.GetNumberOfStates(l2, self.IsIonizedFilter)

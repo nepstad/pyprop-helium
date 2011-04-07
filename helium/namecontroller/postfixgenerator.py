@@ -12,8 +12,9 @@ Provides:
 	GetAngularPostifx(conf)
 """
 
-from ..utils import RegisterAll, RegisterProjectNamespace
+from ..utils import RegisterAll
 from numpy import unique, diff
+import pyprop
 
 @RegisterAll
 def GetProjectPostfix(conf):
@@ -30,9 +31,25 @@ def GetRadialPostfix(conf):
 	implied by the specified args
 	"""
 	cfg = conf.RadialRepresentation
+	repType = cfg.type
+	if isinstance(repType, pyprop.core.BSplineRepresentation):
+		return GetRadialPostfixBsplines(conf)
+	elif isinstance(repType, pyprop.core.CustomGridRepresentation):
+		return GetRadialPostfixFiniteDifference(conf)
+	else:
+		raise Exception("Unknown representation: %s" % repType)
 
+
+def GetRadialPostfixBsplines(conf):
+	"""Bspline radial grid postfix
+
+	Returns a "unique" list of strings string identifying the B-spline
+	radial grid	implied by the specified args
+	"""
+	cfg = conf.RadialRepresentation
 	gridType = cfg.bpstype
-	postfix = ["grid", gridType, "xmax%i" % cfg.xmax, "xsize%i" % cfg.xsize, "order%i" % cfg.order]
+	postfix = ["bsplines", "grid", gridType, "xmax%i" % cfg.xmax, 
+			"xsize%i" % cfg.xsize, "order%i" % cfg.order]
 	if gridType == "linear":
 		pass
 	elif gridType == "exponentiallinear":
@@ -40,6 +57,22 @@ def GetRadialPostfix(conf):
 		postfix.append("gamma%.1f" % cfg.gamma)
 	elif gridType == "exponential":
 		postfix.append("gamma%.1f" % cfg.gamma)
+
+	return postfix
+
+
+def GetRadialPostfixFiniteDifference(conf):
+	"""Finite difference radial grid postfix
+
+	Returns a "unique" list of strings string identifying the finite difference
+	radial grid	implied by the specified args
+	"""
+	cfg = conf.RadialRepresentation
+	gridType = cfg.function.__name__
+	postfix = ["fd", "grid", gridType, "xmin%i" % cfg.xmin, 
+			"xmax%i" % cfg.xmax, "count%i" % cfg.count, 
+			"include_left%s" % cfg.include_left_boundary, 
+			"include_right%s" % cfg.include_right_boundary]
 
 	return postfix
 

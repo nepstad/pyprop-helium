@@ -1,13 +1,12 @@
 import scipy.linalg
-from numpy import array, r_, argsort, real, sqrt, conj, dot, zeros, double
+from numpy import array, r_, argsort, real, sqrt, conj, dot, zeros, double, diag
 import tables
 
 import sys
 sys.path.append("../..")
-sys.path.append("/home/nepstad/sci/dev/pyprop-modules/einpartikkel")
 from helium.configtools import UpdateConfig
 from einpartikkel.utils import UpdatePypropProjectNamespace
-from einpartikkel.namegenerator import GetRadialPostfix
+from helium.namecontroller.postfixgenerator import GetRadialPostfix
 import einpartikkel.core
 from einpartikkel.core.indexiterators import FixedMLmIndexIterator
 import pyprop
@@ -82,19 +81,27 @@ def SetupRadialEigenstates(prop, myTimers = None):
 	
 	"""
 	assert pyprop.IsSingleProc(), "Works only on a single processor"
+	
+	radialRank = 1
 
 	if not myTimers:
 		myTimers = pyprop.Timers()
 
-	myTimers["Setup overlap matrix"].Start()
-	S = SetupOverlapMatrix(prop)
-	myTimers["Setup overlap matrix"].Stop()
 
 	eigenValues = []
 	eigenVectors = []
 
 	lCount = prop.psi.GetData().shape[0]
 	potIndices = range(len(prop.Propagator.BasePropagator.PotentialList))
+
+	#Get integration weights or overlap matrix
+	myTimers["Setup overlap matrix"].Start()
+	if prop.psi.GetRepresentation().IsOrthogonalBasis(radialRank):
+		w = prop.psi.GetRepresentation().GetGlobalWeights(radialRank)
+		S = diag(w)
+	else:
+		S = SetupOverlapMatrix(prop)
+	myTimers["Setup overlap matrix"].Stop()
 
 	for l in range(lCount):
 		l = int(l)
@@ -113,7 +120,7 @@ def SetupRadialEigenstates(prop, myTimers = None):
 
 		#Sort and normalize eigenvectors
 		sNorm = lambda v: sqrt(abs(sum(conj(v) * dot(S, v))))
-		V = array([v/sNorm(v) for v in [V[:,idx[i]] 
+		V = array([v/sNorm(v) for v in [V[:,idx[i]]
 			for i in range(V.shape[1])]]).transpose()
 		eigenVectors.append(V)
 		myTimers["Postprocess eigenpairs"].Stop()

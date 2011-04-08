@@ -4,17 +4,20 @@ Example of how to use the analysis functionality in Pyprop-Helium
 """
 import sys
 sys.path.append("../..")
+sys.path.append("../../pyprop")
 import pyprop
 from helium.analysis.projectors import ProductStateProjector
 from helium.analysis.observables import ContinuumObservables
 from helium.analysis.observables import DoubleContinuumObservables
+from helium.analysis.observables import SingleContinuumObservables
 
 
 #Update location of bound state files
 import helium.siteconfig
-import helium.namecontroller
+import helium.namecontroller.namegenerator
 helium.siteconfig.BoundstateLocation = "boundstates/"
-reload(helium.namecontroller)
+helium.siteconfig.SingleParticleLocations += ["singleparticlestates/"]
+reload(helium.namecontroller.namegenerator)
 
 
 def LoadPropagatedProblem(filename):
@@ -26,7 +29,7 @@ def LoadPropagatedProblem(filename):
 	return conf, psi
 
 
-def CalculateTotalIonizationProbability(filename):
+def CalculateTotalIonizationProbability(conf, psi):
 	"""Calculate total ionization probability by removing projection
 	of atomic bound states.
 
@@ -36,7 +39,7 @@ def CalculateTotalIonizationProbability(filename):
 	ionizationTreshold = -2.0
 	
 	#Load propagated wavefunction and config
-	conf, psi = LoadPropagatedProblem(filename)
+	#conf, psi = LoadPropagatedProblem(filename)
 	
 	#Setup continuum observables
 	contObs = ContinuumObservables(psi, conf, ionizationTreshold)
@@ -73,7 +76,32 @@ def CalculateDoubleIonizationProbability(filename):
 	print "\n Double ionization probability = %s" % doubleIonProb
 
 
-def CalculateDoubleIonizationEnergyDistribution(filename, maxEnergy=2.0,
+def CalculateSingleIonizationProbability(conf, psi):
+	"""Calculate single ionization probability distribution by projection onto
+	He+ bound states and H continuum states
+
+	"""
+
+	#Set energy threshold for ionization of Helium
+	ionizationTreshold = -2.0
+	
+	#Load propagated wavefunction and config
+	#conf, psi = LoadPropagatedProblem(filename)
+	
+	#Setup continuum observables
+	scObs = SingleContinuumObservablesHydrogenHePlus(psi, conf, 
+			ionThreshold = ionizationTreshold)
+	scObs.Setup()
+
+	#Calculate ionization probability
+	singleIonProb = scObs.GetSingleIonizationProbability()
+
+	print "\n Single ionization probability = %s" % singleIonProb
+
+	return scObs
+
+
+def CalculateDoubleIonizationEnergyDistribution(conf, psi, maxEnergy=2.0,
 		numPoints = 200):
 	"""Calculate double ionization energy distribution by projection onto
 	He+ positive-energy eigenstates
@@ -87,7 +115,7 @@ def CalculateDoubleIonizationEnergyDistribution(filename, maxEnergy=2.0,
 	ionizationTreshold = -2.0
 	
 	#Load propagated wavefunction and config
-	conf, psi = LoadPropagatedProblem(filename)
+	#conf, psi = LoadPropagatedProblem(filename)
 	
 	#Setup continuum observables
 	dcObs = DoubleContinuumObservablesHePlus(psi, conf, 
@@ -105,7 +133,7 @@ def CalculateDoubleIonizationEnergyDistribution(filename, maxEnergy=2.0,
 
 
 #-----------------------------------------------------------------------------
-# Implementations of specific double continua
+# Implementations of specific single and double continua
 #-----------------------------------------------------------------------------
 class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	"""
@@ -116,5 +144,17 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	def _SetupProjector(self, conf):
 		self.IsCoulombic = True
 		self.Z = 2.0
-		return ProductStateProjector(conf, "HePlus", "HePlus", 
+		return ProductStateProjector(conf, "HeliumPlus", "HeliumPlus", 
 				self.IsIonizedFilter, self.IsIonizedFilter)
+
+
+class SingleContinuumObservablesHydrogenHePlus(SingleContinuumObservables):
+	"""
+	Observables involving the double continuum, which is defined by a 
+	product of He+ bound states and hydrogen continuum states.
+
+	"""
+	def _SetupProjector(self, conf):
+		self.Z = 1.0
+		return ProductStateProjector(conf, "Hydrogen", "HeliumPlus", 
+				self.IsIonizedFilter, self.IsBoundFilter)

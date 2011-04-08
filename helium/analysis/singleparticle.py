@@ -63,7 +63,7 @@ class SingleParticleStates(object):
 		V = self.__States[l]
 		E = self.__Energies[l]
 
-		filteredStates = array([V[:,i] for i in range(numStates) if \
+		filteredStates = array([V[:,i] for i in range(numStates) if
 			energyFilter(E[i])])
 		filteredEnergies = self.GetRadialEnergies(l, energyFilter)
 
@@ -88,10 +88,21 @@ class SingleParticleStates(object):
 		E, V = self.GetFilteredRadialStates(l, energyFilter)
 		return len(E)
 
-
 	def _Load(self):
 		"""
 		Load single particle states from file.
+		"""
+		if (self.FileName.find("_bsplines_") > -1):
+			self._LoadBsplines()
+		elif self.FileName.find("_fd_") > -1:
+			self._LoadFiniteDifference()
+		else:
+			raise Exception("Unknown representation.")
+
+	def _LoadBsplines(self):
+		"""
+		Load single particle states from file, in the case of Bspline
+		representation
 		"""
 		def loadStates(f):
 			#Create BSpline object
@@ -100,18 +111,20 @@ class SingleParticleStates(object):
 			bspl.ApplyConfigSection(cfgSection)
 
 			#Setup grid to check for correct phase convention
-			phaseGrid = array((0, bspl.GetBreakpointSequence()[1]), dtype=double)
+			phaseGrid = array((0, bspl.GetBreakpointSequence()[1]), 
+				dtype=double)
 			phaseBuffer = zeros(2, dtype=complex)
 
 			lList = f.root.RadialEig.l[:]
 			for l in lList:
 				node = f.getNode("/RadialEig/L%03i" % l)
-				E = node.eigenvalues[:]
-				V = node.eigenvectors[:]
+				E = array(node.eigenvalues[:], dtype=double)
+				V = array(node.eigenvectors[:], dtype=complex)
 
 				#assure correct phase convention (first oscillation should start out real positive)
 				for i, curE in enumerate(E):
-					bspl.ConstructFunctionFromBSplineExpansion(V[:,i].copy(), phaseGrid, phaseBuffer)
+					bspl.ConstructFunctionFromBSplineExpansion(V[:,i].copy(), 
+						phaseGrid, phaseBuffer)
 					phase = arctan2(imag(phaseBuffer[1]), real(phaseBuffer[1]))
 					V[:,i] *= exp(-1.0j * phase)
 				
@@ -119,6 +132,34 @@ class SingleParticleStates(object):
 				if self.Ordering == "ln":
 					self.__States[l] = V
 					self.__Energies[l] = E
+				#elif ordering == "nl":
+				#	self.__States[i] = zeros((), dtype='complex')
+				#	for i, curE in enumerate(E):
+				#		self.__States[i][l,:] = V[:,i]
+				#		self.__Energies[i][l] = E[i]
+				else:
+					raise Exception("Unknown ordering: %s" % self.Ordering)
+
+		#Do the loading; always close file
+		with tables.openFile(self.FileName, "r", MAX_THREADS=1) as f:
+			loadStates(f)
+
+	def _LoadFiniteDifference(self):
+		"""
+		Load single particle states from file, in the case of finite difference
+		representation
+		"""
+		def loadStates(f):
+			lList = f.root.RadialEig.l[:]
+			for l in lList:
+				node = f.getNode("/RadialEig/L%03i" % l)
+				E = node.eigenvalues[:]
+				V = node.eigenvectors[:]
+
+				#Store states and energies on object
+				if self.Ordering == "ln":
+					self.__States[l] = array(V, dtype=complex)
+					self.__Energies[l] = array(E, dtype=double)
 				#elif ordering == "nl":
 				#	self.__States[i] = zeros((), dtype='complex')
 				#	for i, curE in enumerate(E):

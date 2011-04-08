@@ -6,7 +6,8 @@ Calculates projection of wavefunction onto various set of states.
 
 """
 from numpy import array, int32, unique, s_
-from ..utils import RegisterAll
+from pyprop.extern.progressbar import progressbar
+from ..utils import RegisterAll, GetAngularRank
 from ..configtools import Getlmax
 from ..eigenvalues.eigenstates import Eigenstates
 from .singleparticle import SingleParticleStates
@@ -65,12 +66,13 @@ class EigenstateProjector(Projector):
 		"""
 		prevL = -1
 		prevM = -1
-		angularRank = 0
+		angularRank = GetAngularRank(psi)
 		angrepr = psi.GetRepresentation().GetRepresentation(angularRank)
 		psiRank = psi.GetRank()
 		
 		#work buffer wavefunction
-		projPsi = self.Eigenstates.GetBoundstates(0, self.IonThreshold)[0].Copy()
+		projPsi = self.Eigenstates.GetBoundstates(0, 
+			self.IonThreshold)[0].Copy()
 		projPsi.Clear()
 
 		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(self.IonThreshold):
@@ -127,6 +129,8 @@ class ProductStateProjector(Projector):
 		self.SingleStatesRight = SingleParticleStates(modelRight, conf)
 
 		#add here: filter on L's
+
+		self.ShowProgress = True
 
 
 	def ProjectOnto(self, psi):
@@ -210,7 +214,8 @@ class ProductStateProjector(Projector):
 		def innerLoop(radialProjections):
 			#filter out coupled spherical harmonic indices corresponding
 			#to this l
-			angularIndices = self.__GetFilteredAngularIndices(lLeft, lRight, psi)
+			angularIndices = self.__GetFilteredAngularIndices(lLeft, lRight, 
+				psi)
 	
 			#check that wavefunctions contained given angular momenta
 			if len(angularIndices) == 0:
@@ -231,20 +236,34 @@ class ProductStateProjector(Projector):
 			#	len(angularIndices)
 			#sys.stdout.flush()
 			def calculateProjectionCpp():
-				return CalculateProjectionRadialProductStates(lLeft, Vleft, \
+				return CalculateProjectionRadialProductStates(lLeft, Vleft,
 						lRight, Vright, data, angularIndices)
 			projV = calculateProjectionCpp()
 			
 			radialProjections += [(lLeft, lRight, projV)]
-
+		
+		#Setup and show progressbar if this is desired
+		if self.ShowProgress:
+			howMany = (lmax+1)**2
+			widgets = ['Calculating projections: ', progressbar.Percentage(),
+				' ', progressbar.Bar(marker="x")]
+			pbar = \
+				progressbar.ProgressBar(widgets=widgets, maxval=howMany).start()
+			pbar_update = lambda x: pbar.update(x)
+			pbar_finish = lambda : pbar.finish()
+		else:
+			pbar_update = lambda x: True
+			pbar_finish = lambda : True
 
 		#iterate over all lLeft, lRight combinations
+		count = 0
 		for lLeft in range(lmax+1):
 			for lRight in range(lmax+1):
-				
+				pbar_update(count)
 				#calculate radial projections
 				innerLoop(radialProjections)
-
+				count += 1
+		pbar_finish()
 		return radialProjections
 
 

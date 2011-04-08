@@ -31,7 +31,7 @@ def GetRadialPostfix(conf):
 	implied by the specified args
 	"""
 	cfg = conf.RadialRepresentation
-	repType = cfg.type
+	repType = cfg.type()
 	if isinstance(repType, pyprop.core.BSplineRepresentation):
 		return GetRadialPostfixBsplines(conf)
 	elif isinstance(repType, pyprop.core.CustomGridRepresentation):

@@ -8,6 +8,7 @@ Misc utilities are put here for now.
 import sys
 import logging
 import inspect
+import compiler
 import pyprop.core
 from pyprop.core import CoupledSphericalHarmonicRepresentation as \
 	coupledSphRepr
@@ -92,4 +93,44 @@ def GetFunctionLogger():
 	functionName = callerFrame[3]
 	return logging.getLogger("%s.%s" % (moduleName, functionName))
 
+
+@RegisterAll
+def GetCallingFunctionName():
+	"""Return name of calling function
+
+	"""
+	callerFrame = inspect.stack()[1]
+	functionName = callerFrame[3]
+
+	return functionName
+
+
+@RegisterAll
+def GetCallingFunctionDocstring():
+	"""Return docstring of calling function
+
+	"""
+	nodeDoc = []
+	class DocVisitor:
+		def __init__(self, nodeDoc):
+			self.NodeDoc = nodeDoc
+		def visitFunction(self, node):
+			self.NodeDoc += [node.doc]
+
+	callerFrame = inspect.stack()[1][0]
+	sourceCode = inspect.getsource(callerFrame)
+	compiler.walk(compiler.parse(sourceCode), DocVisitor(nodeDoc))
+	
+	return nodeDoc[0]
+
+
+@RegisterAll
+def GetAngularRank(psi):
+	psiRepr = psi.GetRepresentation()
+	for rIdx in range(psi.GetRank()):
+		curRepr = psiRepr.GetRepresentation(rIdx)
+		if isinstance(curRepr, coupledSphRepr):
+			return rIdx
+
+	return -1
 

@@ -14,6 +14,7 @@ from .singleparticle import SingleParticleStates
 from .above import CalculatePopulationRadialProductStates
 from .above import CalculateProjectionRadialProductStates
 from .indextricks import GetLocalCoupledSphericalHarmonicIndices
+from ..configtools import GetRepresentation
 
 
 class Projector(object):
@@ -128,6 +129,18 @@ class ProductStateProjector(Projector):
 		self.SingleStatesLeft = SingleParticleStates(modelLeft, conf)
 		self.SingleStatesRight = SingleParticleStates(modelRight, conf)
 
+		#Get wavefunction rank info
+		self.RadialRanks = []
+		for rank in range(3):
+			curRepr = GetRepresentation(conf, rank)
+			if curRepr == "AngularRepresentation":
+				self.AngularRank = rank
+			elif curRepr == "RadialRepresentation":
+				self.RadialRanks += [rank]
+			else:
+				raise Exception("Could not determine rank info for rank %i"
+					% rank)
+
 		#add here: filter on L's
 
 		self.ShowProgress = True
@@ -167,7 +180,7 @@ class ProductStateProjector(Projector):
 		tempPsi = psi.Copy()
 		repr = psi.GetRepresentation()
 		repr.MultiplyIntegrationWeights(tempPsi)
-		data = tempPsi.GetData()
+		data = self.__GetCorrectLayoutData(tempPsi)
 
 		itLeftStates = self.SingleStatesLeft.IterateFilteredRadialStates
 		itRightStates = self.SingleStatesRight.IterateFilteredRadialStates
@@ -206,7 +219,7 @@ class ProductStateProjector(Projector):
 		tempPsi = psi.Copy()
 		repr = psi.GetRepresentation()
 		repr.MultiplyIntegrationWeights(tempPsi)
-		data = tempPsi.GetData()
+		data = self.__GetCorrectLayoutData(tempPsi)
 
 		#Get lmax
 		lmax = Getlmax(self.Config)
@@ -265,6 +278,18 @@ class ProductStateProjector(Projector):
 				count += 1
 		pbar_finish()
 		return radialProjections
+
+
+	def __GetCorrectLayoutData(self, psi):
+		"""Return wavefunction data as array angular rank as 
+		first rank
+
+		"""
+		data = psi.GetData().copy()
+		if self.AngularRank != 0:
+			data = data.transpose((self.AngularRank, self.RadialRanks[0],
+				self.RadialRanks[1]))
+		return data
 
 
 	def __GetFilteredAngularIndices(self, l1, l2, psi):

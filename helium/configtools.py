@@ -125,3 +125,12 @@ def GetIntensity(conf):
 		raise Exception("Could not determine electromagnetic gauge!")
 
 	return pyprop.utilities.IntensitySIFromElectricFieldAtomic(E0)
+
+
+@RegisterAll
+def GetRepresentation(conf, rank):
+	"""Return representation for given rank
+	"""
+
+	repType = eval("conf.Representation.representation%i" % rank)
+	return repType

@@ -7,8 +7,9 @@ integrated/differential probabilities, etc.
 
 """
 import copy
-from numpy import real, linspace, outer, diff, zeros, double, array, interp, pi, linspace, unique
+from numpy import real, linspace, outer, diff, zeros, double, array, interp
 from numpy import int32, sqrt, exp, arctan2, cos, sin, imag, maximum, conj
+from numpy import linspace
 from numpy import abs as nabs
 import scipy.interpolate
 from helium.configtools import Getlmax
@@ -74,16 +75,24 @@ class ContinuumObservables(object):
 		#Step 1: get initial norm
 		initPsi = pyprop.CreateWavefunction(self.Config)
 		initPsi.Clear()
-		self.Config.InitialCondition.function(initPsi, self.Config.InitialCondition)
-		self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		if self.Config.InitialCondition.type == \
+			pyprop.InitialConditionType.Function:
+			self.Config.InitialCondition.function(initPsi, 
+				self.Config.InitialCondition)
+			self.InitialProbability = initPsi.InnerProduct(initPsi).real
+		else:
+			self.InitialProbability = 1.0
+			self.Logger.warning("Assuming initial norm to be 1.0")
 		
 		#Step 2: calculate absorption
-		self.AbsorbedProbability = self.InitialProbability - real(self.Psi.InnerProduct(self.Psi))
+		self.AbsorbedProbability = self.InitialProbability - \
+			real(self.Psi.InnerProduct(self.Psi))
 
 		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
 		self.BoundstateProjector.RemoveProjection(self.Psi)
-		self.IonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
+		self.IonizationProbability = self.AbsorbedProbability + \
+			self.Psi.InnerProduct(self.Psi).real
 		
 		
 	def GetIonizationProbability(self):
@@ -169,21 +178,25 @@ class ProductStateContinuumObservables(object):
 			initCond.function(initPsi, initCond)
 			self.InitialProbability = initPsi.InnerProduct(initPsi).real
 		elif initCond.type == pyprop.InitialConditionType.Function:
-			localGrid = [initPsi.GetRepresentation().GetLocalGrid(i) for i in range(initPsi.GetRank())]
+			localGrid = [initPsi.GetRepresentation().GetLocalGrid(i) 
+				for i in range(initPsi.GetRank())]
 			initPsi.GetData()[:] = initCond.function(initCond, localGrid)
 			initPsi.Normalize()
 			self.InitialProbability = initPsi.InnerProduct(initPsi).real
 		else:
-			self.Logger.warning("Cannot handle initial condition type: %s. Cannot calculate initial norm, ionization \
-			probability may be wrong." % initCond.type)
+			self.Logger.warning("Cannot handle initial condition type: %s. \
+			Cannot calculate initial norm, ionization probability may be wrong."
+			% initCond.type)
 		
 		#Step 2: calculate absorption
-		self.AbsorbedProbability = self.InitialProbability - real(self.Psi.InnerProduct(self.Psi))
+		self.AbsorbedProbability = self.InitialProbability \
+			- real(self.Psi.InnerProduct(self.Psi))
 
 		#Step 3: remove projection onto bound states
 		self.Logger.info("Removing bound states projection...")
 		self.BoundstateProjector.RemoveProjection(self.Psi)
-		self.TotalIonizationProbability = self.AbsorbedProbability + self.Psi.InnerProduct(self.Psi).real
+		self.TotalIonizationProbability = self.AbsorbedProbability \
+			+ self.Psi.InnerProduct(self.Psi).real
 		
 		#Step 4: remove other projections
 		for P in self.OtherProjectors:
@@ -206,8 +219,8 @@ class SingleContinuumObservables(ProductStateContinuumObservables):
 	----------
 	"""
 
-	#def _SetupProjector(self, conf):
-	#	return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, self.IsBoundFilter)
+	def _SetupProjector(self, conf):
+		return ProductStateProjector(conf, "h", "he+", self.IsIonizedFilter, self.IsBoundFilter)
 			
 	def GetSingleIonizationProbability(self):
 		"""Calculate single ionization probability
@@ -215,11 +228,12 @@ class SingleContinuumObservables(ProductStateContinuumObservables):
 		#check if ionization is already calculated, if so, 
 		#just use buffered value
 		if not self.IonizationIsCalculated:
-			#I = 2.0 * sum([sum([p for i1, i2, p in pop]) for l1, l2, pop in self.RadialProjections])
-			I = 2.0 * sum([(nabs(pop)**2).sum() for l1, l2, pop in self.RadialProjections])
+			I = 2.0 * sum([(nabs(pop)**2).sum() 
+				for l1, l2, pop in self.RadialProjections])
 
 			self.SingleIonizationProbability = I
-			self.DoubleIonizationProbability = self.TotalIonizationProbability - I
+			self.DoubleIonizationProbability = \
+				self.TotalIonizationProbability - I
 			self.IonizationIsCalculated = True
 
 		return self.SingleIonizationProbability
@@ -241,17 +255,21 @@ class SingleContinuumObservables(ProductStateContinuumObservables):
 		P = self.ContinuumProjector
 		for lIon, lBound, lPop in self.RadialProjections:
 			#number of states in this l-shell (matching energy filter)
-			nIon = P.SingleStatesLeft.GetNumberOfStates(lIon, self.IsIonizedFilter)
-			nBound = P.SingleStatesRight.GetNumberOfStates(lBound, self.IsBoundFilter)
+			nIon = P.SingleStatesLeft.GetNumberOfStates(lIon, 
+				self.IsIonizedFilter)
+			nBound = P.SingleStatesRight.GetNumberOfStates(lBound, 
+				self.IsBoundFilter)
 
 			#sum up angular momentum components
-			pop = 2.0 * (nabs(lPop)**2).sum(axis=0).reshape(nIon, nBound).transpose()
+			pop = 2.0 * \
+				(nabs(lPop)**2).sum(axis=0).reshape(nIon, nBound).transpose()
 
 			#add contribution to total double ionization prob.
 			singleIonProb += sum(pop.flatten())
 
 			
-			EIon = P.SingleStatesLeft.GetRadialEnergies(lIon, self.IsIonizedFilter)
+			EIon = P.SingleStatesLeft.GetRadialEnergies(lIon, 
+				self.IsIonizedFilter)
 
 			#Iterate over all bound states for this l-combination
 			for iBound in range(nBound):
@@ -324,10 +342,11 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		#check if double ionization is already calculated, if so, 
 		#just use buffered value
 		if not self.IonizationIsCalculated:
-			I = sum([(nabs(pop)**2).sum() for l1,l2,pop in self.RadialProjections])
-			#I = sum([sum([p for i1,i2,p in pop]) for l1,l2,pop in self.RadialProjections])
+			I = sum([(nabs(pop)**2).sum() 
+				for l1,l2,pop in self.RadialProjections])
 			self.DoubleIonizationProbability = I
-			self.SingleIonizationProbability = self.TotalIonizationProbability - I
+			self.SingleIonizationProbability = \
+				self.TotalIonizationProbability - I
 			self.IonizationIsCalculated = True
 			
 		return self.DoubleIonizationProbability
@@ -365,7 +384,8 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 			pop[:-1,:-1] /= outer(diff(E1), diff(E2))
 			
 			#2d interpolation over all states in this shell
-			interpolator = RectBivariateSpline(E1[:-1], E2[:-1], pop[:-1, :-1], kx=1, ky=1, s=0.0)
+			interpolator = RectBivariateSpline(E1[:-1], E2[:-1], pop[:-1, :-1], 
+				kx=1, ky=1, s=0.0)
 
 			#evaluate on given energy points, and add to total dpde
 			dpde += interpolator(E, E)
@@ -373,10 +393,12 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		#Calculate double ionization probability to check interpolation
 		absErrIonProb = abs(doubleIonProb - sum(dpde.flatten()) * diff(E)[0]**2)
 		relErrIonProb = absErrIonProb/doubleIonProb
-		self.Logger.debug("Integrated double ionization probability: %s" % doubleIonProb)
+		self.Logger.debug("Integrated double ionization probability: %s" 
+			% doubleIonProb)
 		if relErrIonProb > 0.01:
 			warnMsg = "Integrating dP/dE1dE2 does not give correct double ionization probability"
-			self.Logger.warning("%s: relerr = %s, abserr = %s." % (warnMsg, relErrIonProb, absErrIonProb))
+			self.Logger.warning("%s: relerr = %s, abserr = %s." 
+				% (warnMsg, relErrIonProb, absErrIonProb))
 		else :
 			self.Logger.debug("Difference in double ionization probability after interpolation: %s" % absErrIonProb)
 
@@ -393,8 +415,10 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		angularRank = GetAngularRankIndex(self.Psi)
 
 		#Get spherical harmonics at phi1 and phi2
-		assocLegendre1 = array(GetSphericalHarmonics(lmax, thetaGrid, phi1), dtype=complex)
-		assocLegendre2 = array(GetSphericalHarmonics(lmax, thetaGrid, phi2), dtype=complex)
+		assocLegendre1 = array(GetSphericalHarmonics(lmax, thetaGrid, phi1), 
+			dtype=complex)
+		assocLegendre2 = array(GetSphericalHarmonics(lmax, thetaGrid, phi2), 
+			dtype=complex)
 		
 		#calculate angular distr for double ionized psi, evaluated at phi1=phi2=phi
 		#f = angular_distributions.GetDoubleAngularDistributionCoplanar
@@ -412,7 +436,8 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 		interpCount = len(energyGrid)
 	
 		thetaCount = len(thetaGrid)
-		angularDistr = zeros((thetaCount, thetaCount, interpCount, interpCount), dtype=double)
+		angularDistr = zeros((thetaCount, thetaCount, interpCount, interpCount),
+			dtype=double)
 	
 		pop = 0
 		angularDistrProj = zeros(angularDistr.shape, dtype=complex)
@@ -436,12 +461,18 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 			doubleIonProb += sum(pop.flatten())
 	
 			#scale states with 1/dE_1 dE_2
-			E1 = array(P.SingleStatesLeft.GetRadialEnergies(l1, self.IsIonizedFilter))
-			E2 = array(P.SingleStatesRight.GetRadialEnergies(l2, self.IsIonizedFilter))
+			E1 = array(P.SingleStatesLeft.GetRadialEnergies(l1, 
+				self.IsIonizedFilter))
+			E2 = array(P.SingleStatesRight.GetRadialEnergies(l2, 
+				self.IsIonizedFilter))
 			
-			#filter out coupled spherical harmonic indices. this gives us a set of L's for the given l1, l2, M
-			lfilter = lambda coupledIndex: coupledIndex.l1 == l1 and coupledIndex.l2 == l2  
-			angularIndices = array(GetLocalCoupledSphericalHarmonicIndices(self.Psi, lfilter), dtype=int32)
+			#filter out coupled spherical harmonic indices. this gives us a 
+			#set of L's for the given l1, l2, M
+			lfilter = lambda coupledIndex: coupledIndex.l1 == l1 \
+				and coupledIndex.l2 == l2  
+			angularIndices = \
+				array(GetLocalCoupledSphericalHarmonicIndices(self.Psi,
+					lfilter), dtype=int32)
 			getIdx = lambda c: angRepr.Range.GetCoupledIndex(int(c))
 			coupledIndices = map(getIdx, angularIndices)
 	
@@ -453,13 +484,16 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 				interiorSpacing = list(diff(curE)[1:])
 				leftSpacing = (curE[1] - curE[0])
 				rightSpacing = (curE[-1] - curE[-2])
-				spacing = array([leftSpacing] + interiorSpacing + [rightSpacing])
+				spacing = array([leftSpacing] + interiorSpacing + 
+					[rightSpacing])
 				return 1.0 / sqrt(spacing)
 			stateDensity = outer(GetDensity(E1), GetDensity(E2))
 	
 			#coulomb phases (-i)**(l1 + l2) * exp( sigma_l1 * sigma_l2 )
-			phase1 = exp(1.0j * array([GetCoulombPhase(l1, -self.Z/curK) for curK in sqrt(2*E1)]))
-			phase2 = exp(1.0j * array([GetCoulombPhase(l2, -self.Z/curK) for curK in sqrt(2*E2)]))
+			phase1 = exp(1.0j * array([GetCoulombPhase(l1, -self.Z/curK) 
+				for curK in sqrt(2*E1)]))
+			phase2 = exp(1.0j * array([GetCoulombPhase(l2, -self.Z/curK) 
+				for curK in sqrt(2*E2)]))
 			phase = (-1.j)**(l1 + l2) * outer(phase1, phase2)
 	
 			#interpolate projection on equidistant energies and sum over L and M
@@ -473,17 +507,23 @@ class DoubleContinuumObservables(ProductStateContinuumObservables):
 					i = arctan2(imag(curRadialProj), real(curRadialProj))
 					argr = cos(i)
 					argi = sin(i)
-					interpr = scipy.interpolate.RectBivariateSpline(E1, E2, r, kx=1, ky=1)(energyGrid, energyGrid)
-					interpArgR = scipy.interpolate.RectBivariateSpline(E1, E2, argr, kx=1, ky=1)(energyGrid, energyGrid)
-					interpArgI = scipy.interpolate.RectBivariateSpline(E1, E2, argi, kx=1, ky=1)(energyGrid, energyGrid)
-					interpPhase = (interpArgR + 1.j*interpArgI) / sqrt(interpArgR**2 + interpArgI**2)
+					interpr = scipy.interpolate.RectBivariateSpline(E1, E2, r, 
+						kx=1, ky=1)(energyGrid, energyGrid)
+					interpArgR = scipy.interpolate.RectBivariateSpline(E1, E2, 
+						argr, kx=1, ky=1)(energyGrid, energyGrid)
+					interpArgI = scipy.interpolate.RectBivariateSpline(E1, E2, 
+						argi, kx=1, ky=1)(energyGrid, energyGrid)
+					interpPhase = (interpArgR + 1.j*interpArgI) \
+						/ sqrt(interpArgR**2 + interpArgI**2)
 					curInterpProj = sqrt(maximum(interpr, 0)) * interpPhase
 					return curInterpProj
 				curInterpProj = dointerp()
 	
 				#Sum over m:
 				def doSum():
-					AddDoubleAngularProjectionCoplanar(angularDistrProj, assocLegendre1, assocLegendre2, curInterpProj, coupledIndices[j])
+					AddDoubleAngularProjectionCoplanar(angularDistrProj, 
+						assocLegendre1, assocLegendre2, curInterpProj, 
+						coupledIndices[j])
 				doSum()
 	
 		#calculate projection for this m-shell
@@ -504,7 +544,8 @@ class DoubleContinuumObservablesHePlus(DoubleContinuumObservables):
 	def _SetupProjector(self, conf):
 		self.IsCoulombic = True
 		self.Z = 2.0
-		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, self.IsIonizedFilter)
+		return ProductStateProjector(conf, "he+", "he+", self.IsIonizedFilter, 
+			self.IsIonizedFilter)
 
 @RegisterAll
 class DoubleContinuumObservablesHydrogen(DoubleContinuumObservables):
@@ -516,7 +557,8 @@ class DoubleContinuumObservablesHydrogen(DoubleContinuumObservables):
 	def _SetupProjector(self, conf):
 		self.IsCoulombic = True
 		self.Z = 1.0
-		return ProductStateProjector(conf, "h", "h", self.IsIonizedFilter, self.IsIonizedFilter)
+		return ProductStateProjector(conf, "h", "h", self.IsIonizedFilter, 
+			self.IsIonizedFilter)
 
 
 @RegisterAll
@@ -529,7 +571,8 @@ class DoubleContinuumObservablesCoulomb175(DoubleContinuumObservables):
 	def _SetupProjector(self, conf):
 		self.IsCoulombic = True
 		self.Z = 1.75
-		return ProductStateProjector(conf, "c175", "c175", self.IsIonizedFilter, self.IsIonizedFilter)
+		return ProductStateProjector(conf, "c175", "c175", 
+			self.IsIonizedFilter, self.IsIonizedFilter)
 	
 	
 @RegisterAll
@@ -543,7 +586,8 @@ class DoubleContinuumObservablesCoulombZ(DoubleContinuumObservables):
 	def _SetupProjector(self, conf):
 		self.IsCoulombic = True
 		self.Z = conf.CoulombWaves.charge
-		return ProductStateProjector(conf, "c%s" % self.Z, "c%s" % self.Z, self.IsIonizedFilter, self.IsIonizedFilter)
+		return ProductStateProjector(conf, "c%s" % self.Z, "c%s" % self.Z, 
+			self.IsIonizedFilter, self.IsIonizedFilter)
 		
 
 @RegisterAll
@@ -602,7 +646,7 @@ class SingleParticleStateDecomposition(object):
 		#Step 2: create projector
 		self.Logger.info("Setting up product state projector...")
 		self.SingleParticleProjector = \
-				ProductStateProjector(self.Config, self.LeftModel, self.RightModel, \
+			ProductStateProjector(self.Config, self.LeftModel, self.RightModel,
 				self.LeftFilter, self.RightFilter)
 
 		#Step 3: Calculate projections onto product basis states

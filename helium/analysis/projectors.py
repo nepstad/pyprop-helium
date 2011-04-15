@@ -6,7 +6,8 @@ Calculates projection of wavefunction onto various set of states.
 
 """
 from numpy import array, int32, unique, s_
-from ..utils import RegisterAll
+from pyprop.extern.progressbar import progressbar
+from ..utils import RegisterAll, GetAngularRank
 from ..configtools import Getlmax
 from ..eigenvalues.eigenstates import Eigenstates
 from .singleparticle import SingleParticleStates
@@ -14,6 +15,7 @@ from .above import CalculatePopulationRadialProductStates
 from .above import CalculateProjectionRadialProductStates
 from .above import RemoveProjectionRadialProductStates
 from .indextricks import GetLocalCoupledSphericalHarmonicIndices
+from ..configtools import GetRepresentation
 
 
 class Projector(object):
@@ -66,12 +68,13 @@ class EigenstateProjector(Projector):
 		"""
 		prevL = -1
 		prevM = -1
-		angularRank = 0
+		angularRank = GetAngularRank(psi)
 		angrepr = psi.GetRepresentation().GetRepresentation(angularRank)
 		psiRank = psi.GetRank()
 		
 		#work buffer wavefunction
-		projPsi = self.Eigenstates.GetBoundstates(0, self.IonThreshold)[0].Copy()
+		projPsi = self.Eigenstates.GetBoundstates(0, 
+			self.IonThreshold)[0].Copy()
 		projPsi.Clear()
 
 		for L, E, boundPsi in self.Eigenstates.IterateBoundstates(self.IonThreshold):
@@ -127,7 +130,21 @@ class ProductStateProjector(Projector):
 		self.SingleStatesLeft = SingleParticleStates(modelLeft, conf)
 		self.SingleStatesRight = SingleParticleStates(modelRight, conf)
 
+		#Get wavefunction rank info
+		self.RadialRanks = []
+		for rank in range(3):
+			curRepr = GetRepresentation(conf, rank)
+			if curRepr == "AngularRepresentation":
+				self.AngularRank = rank
+			elif curRepr == "RadialRepresentation":
+				self.RadialRanks += [rank]
+			else:
+				raise Exception("Could not determine rank info for rank %i"
+					% rank)
+
 		#add here: filter on L's
+
+		self.ShowProgress = True
 
 
 	def ProjectOnto(self, psi):
@@ -204,7 +221,7 @@ class ProductStateProjector(Projector):
 		tempPsi = psi.Copy()
 		repr = psi.GetRepresentation()
 		repr.MultiplyIntegrationWeights(tempPsi)
-		data = tempPsi.GetData()
+		data = self.__GetCorrectLayoutData(tempPsi)
 
 		itLeftStates = self.SingleStatesLeft.IterateFilteredRadialStates
 		itRightStates = self.SingleStatesRight.IterateFilteredRadialStates
@@ -243,7 +260,7 @@ class ProductStateProjector(Projector):
 		tempPsi = psi.Copy()
 		repr = psi.GetRepresentation()
 		repr.MultiplyIntegrationWeights(tempPsi)
-		data = tempPsi.GetData()
+		data = self.__GetCorrectLayoutData(tempPsi)
 
 		#Get lmax
 		lmax = Getlmax(self.Config)
@@ -251,7 +268,8 @@ class ProductStateProjector(Projector):
 		def innerLoop(radialProjections):
 			#filter out coupled spherical harmonic indices corresponding
 			#to this l
-			angularIndices = self.__GetFilteredAngularIndices(lLeft, lRight, psi)
+			angularIndices = self.__GetFilteredAngularIndices(lLeft, lRight, 
+				psi)
 	
 			#check that wavefunctions contained given angular momenta
 			if len(angularIndices) == 0:
@@ -272,21 +290,47 @@ class ProductStateProjector(Projector):
 			#	len(angularIndices)
 			#sys.stdout.flush()
 			def calculateProjectionCpp():
-				return CalculateProjectionRadialProductStates(lLeft, Vleft, \
+				return CalculateProjectionRadialProductStates(lLeft, Vleft,
 						lRight, Vright, data, angularIndices)
 			projV = calculateProjectionCpp()
 			
 			radialProjections += [(lLeft, lRight, projV)]
-
+		
+		#Setup and show progressbar if this is desired
+		if self.ShowProgress:
+			howMany = (lmax+1)**2
+			widgets = ['Calculating projections: ', progressbar.Percentage(),
+				' ', progressbar.Bar(marker="x")]
+			pbar = \
+				progressbar.ProgressBar(widgets=widgets, maxval=howMany).start()
+			pbar_update = lambda x: pbar.update(x)
+			pbar_finish = lambda : pbar.finish()
+		else:
+			pbar_update = lambda x: True
+			pbar_finish = lambda : True
 
 		#iterate over all lLeft, lRight combinations
+		count = 0
 		for lLeft in range(lmax+1):
 			for lRight in range(lmax+1):
-				
+				pbar_update(count)
 				#calculate radial projections
 				innerLoop(radialProjections)
-
+				count += 1
+		pbar_finish()
 		return radialProjections
+
+
+	def __GetCorrectLayoutData(self, psi):
+		"""Return wavefunction data as array angular rank as 
+		first rank
+
+		"""
+		data = psi.GetData().copy()
+		if self.AngularRank != 0:
+			data = data.transpose((self.AngularRank, self.RadialRanks[0],
+				self.RadialRanks[1]))
+		return data
 
 
 	def __GetFilteredAngularIndices(self, l1, l2, psi):

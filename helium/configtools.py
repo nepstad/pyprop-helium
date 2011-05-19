@@ -112,14 +112,11 @@ def GetIntensity(conf):
 	"""
 	amplitude = conf.PulseParameters.amplitude
 	#determine e.m. gauge
-	#timefuncName = conf.PulseParameters.time_function.__name__
-	#if timefuncName == "LaserFunctionVelocity" \
-	velocity_gauge = lambda el: el.startswith("LaserPotentialVelocity") 
-	length_gauge = lambda el: el.startswith("LaserPotentialLength") 
+	gauge = DetermineDipoleGauge(conf)
 
-	if map(velocity_gauge, conf.Propagation.grid_potential_list):
+	if (gauge == DIPOLE_GAUGE.VELOCITY):
 		E0 = amplitude * conf.PulseParameters.frequency
-	elif map(length_gauge, conf.Propagation.grid_potential_list):
+	elif (gauge == DIPOLE_GAUGE.LENGTH):
 		E0 = amplitude
 	else:
 		raise Exception("Could not determine electromagnetic gauge!")
@@ -134,3 +131,37 @@ def GetRepresentation(conf, rank):
 
 	repType = eval("conf.Representation.representation%i" % rank)
 	return repType
+
+@RegisterAll
+def DetermineDipoleGauge(conf):
+	"""Determine whether lenght or velocity gauge is in use
+
+	Input
+	-----
+	conf: a pyprop config object
+
+	Returns
+	-------
+	gauge: (DIPOLE_GAUGE instance) which gauge was used
+
+	Raises
+	------
+	If e.m. gauge could not be determined, raises Exception()
+
+	"""
+
+	potList = conf.Propagation.grid_potential_list
+	useVG = len([p for p in potList if p == "LaserPotentialVelocity"]) > 0
+	useLG = len([p for p in potList if p == "LaserPotentialLength"]) > 0
+	if useVG:
+		return DIPOLE_GAUGE.VELOCITY
+	elif useLG:
+		return DIPOLE_GAUGE.LENGTH
+	else:
+		raise Exception("Could not determine dipole gauge")
+
+@RegisterAll
+class DIPOLE_GAUGE:
+	VELOCITY = "velocity"
+	LENGTH = "length"
+

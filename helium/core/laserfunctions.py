@@ -69,3 +69,20 @@ def LaserFunctionLength(conf, t):
 	return curField
 
 
+@RegisterProjectNamespace
+@RegisterAll
+def LaserFunctionGaussian(conf, t):
+   #FWHM duration
+    tau = conf.fwhm_pulse_duration
+
+    #total pulse duration
+    t0 = conf.pulse_duration
+
+    curField = 0.0
+    if 0.0 < t <= 2*t0:
+        w = conf.frequency
+        A0 = conf.amplitude
+        curField = A0 * exp(-2 * log(2) * (t-t0)**2 / tau**2) * cos(w * (t-t0))
+
+    return curField
+

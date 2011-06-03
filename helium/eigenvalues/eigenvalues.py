@@ -126,4 +126,5 @@ def SaveEigenvalueSolverShiftInvert(solver, shiftInvertSolver):
 		finally:
 			h5file.close()
 
-		pypar.barrier()
+	pypar.barrier()
+

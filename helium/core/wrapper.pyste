@@ -8,6 +8,7 @@ PotentialEvaluator("CoupledSphericalCoulombPotential<3> 3", "CoupledSphericalCou
 
 #Absorber
 PotentialEvaluator("ComplexAbsorbingPotential<3> 3","ComplexAbsorbingPotential_3")
+PotentialEvaluator("ManolopoulosAbsorber<3> 3","ManolopoulosAbsorber_3")
 
 #"Overlap" potential (to extract overlap matrix)
 PotentialEvaluator("OverlapPotential<3> 3","OverlapPotential_3")

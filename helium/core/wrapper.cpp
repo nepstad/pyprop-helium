@@ -45,6 +45,17 @@ void Export_wrapper()
         .def("CalculateExpectationValue", &DynamicPotentialEvaluator<ComplexAbsorbingPotential<3>,3>::CalculateExpectationValue)
     ;
 
+    class_< DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3> >("ManolopoulosAbsorber_3", init<  >())
+        .def(init< const DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>& >())
+        .def("ApplyConfigSection", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::ApplyConfigSection)
+        .def("ApplyPotential", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::ApplyPotential)
+        .def("MultiplyPotential", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::MultiplyPotential)
+        .def("UpdateStaticPotential", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::UpdateStaticPotential)
+        .def("GetPotential", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::GetPotential)
+        .def("UpdatePotentialData", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::UpdatePotentialData)
+        .def("CalculateExpectationValue", &DynamicPotentialEvaluator<ManolopoulosAbsorber<3>,3>::CalculateExpectationValue)
+    ;
+
     class_< DynamicPotentialEvaluator<OverlapPotential<3>,3> >("OverlapPotential_3", init<  >())
         .def(init< const DynamicPotentialEvaluator<OverlapPotential<3>,3>& >())
         .def("ApplyConfigSection", &DynamicPotentialEvaluator<OverlapPotential<3>,3>::ApplyConfigSection)

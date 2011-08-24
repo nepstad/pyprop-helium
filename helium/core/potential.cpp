@@ -281,7 +281,7 @@ public:
 	{
 		config.Get("energy_cutoff", EnergyCutoff);
 		config.Get("grid_max", GridMax);
-		config.Get("delta", Delta);
+		config.Get("absorber_start", Start);
 		config.Get("radial_rank_1", RadialRank1);
 		config.Get("radial_rank_2", RadialRank2);
 
@@ -292,8 +292,14 @@ public:
 		//Calculate absorber start
 		double kmin = std::sqrt(2*EnergyCutoff);
 		Start = GridMax - C / (2 * Delta * kmin);
+
+		//Calculate delta
+		double kmin = std::sqrt(2*EnergyCutoff);
+		Delta = C / (2 * kmin * (GridMax - Start));
 		
-		//cout << "Absorber starts at " << Start << std::endl;
+		cout << "Manolopoulos absorber" << endl;
+		cout << "  Absorber starts at " << Start << std::endl;
+		cout << "  Delta parameter = " << Delta << std::endl;		
 	}
 
 	inline cplx GetPotentialValue(const blitz::TinyVector<double, Rank> &pos)
